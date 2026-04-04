@@ -1,6 +1,7 @@
 #include "PropertyTile.hpp"
 #include <vector>
 
+/// @brief Represents a street tile on the board. (Real estate)
 class StreetTile : public PropertyTile
 {
 private:

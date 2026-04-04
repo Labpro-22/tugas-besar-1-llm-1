@@ -1,5 +1,6 @@
 #include "Tile.hpp"
 
+/// @brief Represents a tile that triggers an action when landed on.
 class ActionTile : public Tile
 {
 private:
@@ -7,5 +8,13 @@ private:
 public:
   ActionTile(/* args */);
   ~ActionTile();
-  virtual void action(Player &player) = 0;
+  virtual void executeAction(Player &player) = 0;
 };
+
+ActionTile::ActionTile(/* args */)
+{
+}
+
+ActionTile::~ActionTile()
+{
+}

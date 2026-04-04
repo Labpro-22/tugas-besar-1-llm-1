@@ -1,5 +1,6 @@
 #include "PropertyTile.hpp"
 
+/// @brief Represents a utility tile on the board. (Electric Company and Water Works)
 class UtilityTile : public PropertyTile
 {
 private:

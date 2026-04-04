@@ -1,5 +1,6 @@
 #include "Tile.hpp"
 
+/// @brief Represents a special tile on the board where specific actions occur when players land on it.
 class SpecialTile : public Tile
 {
 private:
@@ -7,7 +8,7 @@ private:
 public:
   SpecialTile(/* args */);
   ~SpecialTile();
-  virtual void action(Player &player) = 0;
+  virtual void executeAction(Player &player) = 0;
 };  
 
 SpecialTile::SpecialTile(/* args */)

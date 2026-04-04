@@ -1,5 +1,6 @@
 #include "ActionTile.hpp"
 
+/// @brief A tile that allows the player to draw a card when they land on it.
 class CardTile : public ActionTile
 {
 private:
