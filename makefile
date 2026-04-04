@@ -12,6 +12,8 @@ INCLUDE_DIR := include
 DATA_DIR    := data
 CONFIG_DIR  := config
 
+DOXYGEN_DIR := doc/doxygen
+
 # Target executable
 TARGET := $(BIN_DIR)/game
 
@@ -46,7 +48,7 @@ run: all
 
 # Clean up generated files
 clean:
-	rm -rf $(OBJ_DIR) $(BIN_DIR)
+	rm -rf $(OBJ_DIR) $(BIN_DIR) $(DOXYGEN_DIR)
 	@echo "Cleaned up $(OBJ_DIR) and $(BIN_DIR)"
 
 # Rebuild everything from scratch

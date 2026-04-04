@@ -1,6 +1,6 @@
 #include "Tile.hpp"
 
-/// @brief Represents a tile that triggers an action when landed on.
+/// @brief A tile that triggers an action when landed on.
 class ActionTile : public Tile
 {
 private:

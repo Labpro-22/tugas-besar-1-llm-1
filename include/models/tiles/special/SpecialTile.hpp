@@ -1,6 +1,6 @@
 #include "Tile.hpp"
 
-/// @brief Represents a special tile on the board where specific actions occur when players land on it.
+/// @brief A special tile on the board where specific actions occur when players land on it.
 class SpecialTile : public Tile
 {
 private:

@@ -1,6 +1,6 @@
 #include "Tile.hpp"
 
-/// @brief Represents a property tile on the board.
+/// @brief A property tile on the board.
 class PropertyTile : public Tile
 {
 private:

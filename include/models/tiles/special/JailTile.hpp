@@ -1,6 +1,6 @@
 #include "SpecialTile.hpp"
 
-/// @brief Represents a tile where players are placed when in jail.
+/// @brief A tile where players are placed when in jail.
 class JailTile : public SpecialTile
 {
 private:

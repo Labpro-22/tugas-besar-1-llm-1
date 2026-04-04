@@ -1,6 +1,6 @@
 #include "PropertyTile.hpp"
 
-/// @brief Represents a railroad tile on the board.
+/// @brief A railroad tile on the board.
 class RailroadTile : public PropertyTile
 {
 private:
