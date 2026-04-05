@@ -70,9 +70,21 @@ public:
   /// @return Liquid wealth of the player
   int getLiquidWealth() const;
 
+  /// @brief Gets the player's current status (active, bankrupt, or jailed)
+  /// @return The current status of the player
+  PlayerStatus getStatus() const;
+
+  /// @brief Gets the player's current position on the board
+  /// @return The current position of the player
+  int getPosition() const;
+
   /// @brief Gets the total value of the player's properties
   /// @return Total property value of the player
   int getPropertyValue() const;
+
+  /// @brief Gets the player's properties
+  /// @return A vector of pointers to the player's properties
+  std::vector<PropertyTile *> getProperties() const;
 
   /// @brief Adds a property to the player's portfolio
   /// @param property The property tile to be added
@@ -94,6 +106,12 @@ public:
   /// @param group The color group to check
   /// @return True if the player has a monopoly on the color group, false otherwise
   bool hasMonopoly(ColorGroup group) const;
+
+  /// @brief Gets the properties that are part of a monopoly for a specific color group
+  /// @param group The color group to check
+  /// @return A vector of vectors of pointers to the properties that are part of a monopoly.
+  /// Each inner vector represents a complete set of properties for that color group.
+  std::vector<std::vector<PropertyTile *>> getMonopolyProperties() const;
 };
 
 enum class PlayerStatus
