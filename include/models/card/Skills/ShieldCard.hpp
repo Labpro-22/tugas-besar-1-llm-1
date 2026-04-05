@@ -4,13 +4,14 @@
 class ShieldCard : public SkillCard
 {
 private:
+  /// @brief The duration of the shield effect in turns.
   int duration;
 public:
   ShieldCard(/* args */);
   ~ShieldCard();
 };
 
-ShieldCard::ShieldCard(/* args */)
+ShieldCard::ShieldCard(/* args */) : SkillCard(/* args */)
 {
 }
 

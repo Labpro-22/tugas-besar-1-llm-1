@@ -4,13 +4,14 @@
 class MoveCard : public SkillCard
 {
 private:
+  /// @brief The number of steps the player can move when using this card.
   int steps;
 public:
   MoveCard(/* args */);
   ~MoveCard();
 };
 
-MoveCard::MoveCard(/* args */)
+MoveCard::MoveCard(/* args */) : SkillCard(/* args */)
 {
 }
 

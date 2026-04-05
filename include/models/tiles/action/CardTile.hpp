@@ -10,7 +10,7 @@ public:
   ~CardTile();
 };
 
-CardTile::CardTile(/* args */)
+CardTile::CardTile(/* args */) : ActionTile(/* args */)
 {
 }
 

@@ -8,9 +8,13 @@ private:
 public:
   CommunityChestCard(/* args */);
   ~CommunityChestCard();
+
+  /// @brief Executes the action associated with the card.
+  /// @param player The player who drew the card.
+  void executeAction(Player &player) override;
 };
 
-CommunityChestCard::CommunityChestCard(/* args */)
+CommunityChestCard::CommunityChestCard(/* args */) : Card(/* args */)
 {
 }
 

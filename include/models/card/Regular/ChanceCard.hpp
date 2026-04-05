@@ -8,9 +8,13 @@ private:
 public:
   ChanceCard(/* args */);
   ~ChanceCard();
+
+  /// @brief Executes the action associated with the card.
+  /// @param player The player who drew the card.
+  void executeAction(Player &player) override;
 };
 
-ChanceCard::ChanceCard(/* args */)
+ChanceCard::ChanceCard(/* args */) : Card(/* args */)
 {
 }
 

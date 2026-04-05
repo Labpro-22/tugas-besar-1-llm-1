@@ -12,7 +12,7 @@ public:
   ~TaxTile();
 };
 
-TaxTile::TaxTile(/* args */)
+TaxTile::TaxTile(/* args */) : ActionTile(/* args */)
 {
 }
 

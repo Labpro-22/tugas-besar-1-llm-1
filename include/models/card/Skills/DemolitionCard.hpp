@@ -10,7 +10,7 @@ public:
   ~DemolitionCard();
 };
 
-DemolitionCard::DemolitionCard(/* args */)
+DemolitionCard::DemolitionCard(/* args */) : SkillCard(/* args */)
 {
 }
 

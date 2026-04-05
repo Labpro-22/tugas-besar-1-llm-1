@@ -8,10 +8,12 @@ private:
 public:
   GoTile(/* args */);
   ~GoTile();
+  
+  /// @brief The amount of salary a player collects when they pass or land on the Go tile.
   int salary;
 };
 
-GoTile::GoTile(/* args */)
+GoTile::GoTile(/* args */) : SpecialTile(/* args */)
 {
 }
 

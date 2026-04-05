@@ -10,7 +10,7 @@ public:
   ~TeleportCard();
 };
 
-TeleportCard::TeleportCard(/* args */)
+TeleportCard::TeleportCard(/* args */) : SkillCard(/* args */)
 {
 }
 

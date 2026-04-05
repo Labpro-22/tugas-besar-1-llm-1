@@ -10,7 +10,7 @@ public:
   ~FestivalTile();
 };
 
-FestivalTile::FestivalTile(/* args */)
+FestivalTile::FestivalTile(/* args */) : ActionTile(/* args */)
 {
 }
 

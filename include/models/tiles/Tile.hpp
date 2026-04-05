@@ -13,6 +13,8 @@ public:
   Tile(/* args */);
   ~Tile();
 
+  /// @brief Handles the event when a player lands on this tile.
+  /// @param player The player who landed on the tile.
   virtual void landedOn(Player &player) = 0;
 };
 

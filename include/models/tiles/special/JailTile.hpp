@@ -8,10 +8,12 @@ private:
 public:
   JailTile(/* args */);
   ~JailTile();
+
+  /// @brief The amount of fine a player must pay to get out of jail.
   int fineAmount;
 };  
 
-JailTile::JailTile(/* args */)
+JailTile::JailTile(/* args */) : SpecialTile(/* args */)
 {
 }
 

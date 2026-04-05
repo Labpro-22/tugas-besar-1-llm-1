@@ -1,26 +1,28 @@
 /// @brief A deck of cards for managing the draw and discard piles.
 /// @tparam T The type of card in the deck.
-template<typename T>
-class CardDeck {
+template <typename T>
+class CardDeck
+{
 private:
-    std::vector<T*> drawPile;
-    std::vector<T*> discardPile;
-    
+    /// @brief The draw pile of the deck, containing cards that can be drawn by players.
+    std::vector<T *> drawPile;
+
+    /// @brief The discard pile of the deck, containing cards that have been used or discarded by players.
+    std::vector<T *> discardPile;
+
 public:
-    CardDeck();
-    ~CardDeck();
-    
     /// @brief Initializes the card deck with a given set of cards.
-    /// @param cards A vector of pointers to cards to initialize the deck with. 
-    void initialize(const std::vector<T*>& cards);
+    /// @param cards A vector of pointers to cards to initialize the deck with.
+    CardDeck(const std::vector<T *> &cards);
+    ~CardDeck();
 
     /// @brief Draws a card from the draw pile. If the draw pile is empty, reshuffles discard pile into draw pile.
     /// @return A pointer to the drawn card.
-    T* draw();
+    T *draw();
 
     /// @brief Discards a card to the discard pile.
     /// @param card A pointer to the card to be discarded.
-    void discard(T* card);
+    void discard(T *card);
 
     /// @brief Shuffles the draw pile.
     void shuffle();

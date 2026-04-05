@@ -10,7 +10,7 @@ public:
   ~LassoCard();
 };
 
-LassoCard::LassoCard(/* args */)
+LassoCard::LassoCard(/* args */) : SkillCard(/* args */)
 {
 }
 

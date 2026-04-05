@@ -7,22 +7,59 @@
 class Player
 {
 private:
-  string username;
+  /// @brief The unique identifier for the player, generated at the start of the game.
+  int id;
+
+  /// @brief The username chosen by the player.
+  std::string username;
+
+  /// @brief The current amount of money the player has.
   int money;
+
+  /// @brief The current status of the player (active, bankrupt, or jailed).
   PlayerStatus status;
 
+  /// @brief The current position of the player on the board (0 to Tile Count - 1).
   int position;
+
+  /// @brief The number of turns the player has been in jail.
   int jailTurns;
+
+  /// @brief The skill cards currently held by the player, with a maximum of 3 cards.
   std::vector<SkillCard *> hand;
+
+  /// @brief The properties currently owned by the player.
   std::vector<PropertyTile *> properties;
+
+  /// @brief Flag to track if the player has used a skill card this turn.
   bool hasUsedSkillThisTurn;
+
+  /// @brief Flag to track if the player has rolled the dice this turn.
   bool hasRolledDice;
+
+  /// @brief The number of consecutive doubles rolled by the player,
+  /// @brief resets to 0 if a non-double is rolled or if the player goes to jail after rolling 3 doubles.
   int consecutiveDoubles;
 
 public:
+  /// @brief Adds money to the player's balance.
+  /// @param amount The amount of money to add.
+  /// @return A reference to the updated player.
   Player &operator+=(int amount);
+
+  /// @brief Subtracts money from the player's balance.
+  /// @param amount The amount of money to subtract.
+  /// @return A reference to the updated player.
   Player &operator-=(int amount);
+
+  /// @brief Compares the player's money with another player's money.
+  /// @param other The other player to compare with.
+  /// @return True if the player has less money than the other player, false otherwise.
   bool operator<(const Player &other) const;
+
+  /// @brief Compares the player's money with another player's money.
+  /// @param other The other player to compare with.
+  /// @return True if the player has more money than the other player, false otherwise.
   bool operator>(const Player &other) const;
 
   /// @brief Calculates total wealth (cash + property values)

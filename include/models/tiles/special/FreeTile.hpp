@@ -10,7 +10,7 @@ public:
   ~FreeTile();
 };
 
-FreeTile::FreeTile(/* args */)
+FreeTile::FreeTile(/* args */) : SpecialTile(/* args */)
 {
 }
 

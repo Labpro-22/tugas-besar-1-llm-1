@@ -4,14 +4,17 @@
 class DiscountCard : public SkillCard
 {
 private:
+  /// @brief The percentage of discount provided by the card.
   int discountPercentage;
+  
+  /// @brief The duration of the discount effect in turns.
   int duration;
 public:
   DiscountCard(/* args */);
   ~DiscountCard();
 };
 
-DiscountCard::DiscountCard(/* args */)
+DiscountCard::DiscountCard(/* args */) : SkillCard(/* args */)
 {
 }
 

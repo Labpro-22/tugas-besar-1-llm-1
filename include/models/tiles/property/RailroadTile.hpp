@@ -9,10 +9,12 @@ public:
   RailroadTile(/* args */);
   ~RailroadTile();
 
+  /// @brief Calculates the rent for the railroad tile based on the number of railroads owned.
+  /// @return The amount of rent to be paid.
   int calculateRent() const;
 };
 
-RailroadTile::RailroadTile(/* args */)
+RailroadTile::RailroadTile(/* args */) : PropertyTile(/* args */)
 {
 }
 

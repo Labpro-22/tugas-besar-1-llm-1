@@ -10,7 +10,7 @@ public:
   ~GoToJailTile();
 };
 
-GoToJailTile::GoToJailTile(/* args */)
+GoToJailTile::GoToJailTile(/* args */) : SpecialTile(/* args */)
 {
 }
 
