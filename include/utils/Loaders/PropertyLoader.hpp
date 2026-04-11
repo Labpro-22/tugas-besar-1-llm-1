@@ -1,6 +1,7 @@
 #include "Loader.hpp"
 #include <PropertyTile.hpp>
 
+/// @brief Loader class responsible for loading property tile configurations from a file.
 class PropertyLoader : public Loader
 {
 private:

@@ -1,6 +1,7 @@
 #include <string>
 #include <fstream>
 
+/// @brief Abstract base class for loading configurations from files, to be extended by specific loaders for different game components.
 class Loader
 {
 private:
