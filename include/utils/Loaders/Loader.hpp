@@ -4,20 +4,15 @@
 class Loader
 {
 private:
+  /// @brief The filename to load from or save to.
   std::string filename;
+  /// @brief File buffer for reading/writing operations.
   std::filebuf fileBuffer;
 
 public:
-  void virtual loadConfig() = 0;
+  /// @brief Abstract method to be implemented by derived classes to load specific configurations.
+  virtual void loadConfig() = 0;
 
   Loader(std::string filename);
   ~Loader();
 };
-
-Loader::Loader(std::string filename) : filename(filename)
-{
-}
-
-Loader::~Loader()
-{
-}
