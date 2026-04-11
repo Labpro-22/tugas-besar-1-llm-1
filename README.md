@@ -2,3 +2,7 @@
 # Tugas Besar 1 IF2010 Pemrograman Berorientasi Objek
 
 Project Structure ini hanyalah referensi, Anda dapat menyesuaikannya dengan kebutuhan tim Anda
+
+Diagram Prerequisites:
+[Doxygen](https://www.doxygen.nl/)
+[hpp2PlantUML](https://github.com/thibaultmarin/hpp2plantuml)
