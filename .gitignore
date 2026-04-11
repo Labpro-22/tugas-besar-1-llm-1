@@ -42,6 +42,3 @@ bin/
 
 # debug information files
 *.dwo
-
-# Doxygen generated files
-doc/doxygen/*

@@ -12,7 +12,7 @@ INCLUDE_DIR := include
 DATA_DIR    := data
 CONFIG_DIR  := config
 
-DOXYGEN_DIR := doc/doxygen
+DOC_DIR     := doc
 
 # Target executable
 TARGET := $(BIN_DIR)/game
@@ -30,7 +30,7 @@ all: directories $(TARGET)
 
 # Create necessary root directories
 directories:
-	@mkdir -p $(OBJ_DIR) $(BIN_DIR) $(DATA_DIR) $(CONFIG_DIR)
+	@mkdir -p $(OBJ_DIR) $(BIN_DIR) $(DATA_DIR) $(CONFIG_DIR) $(DOC_DIR)
 
 # Link object files to create executable
 $(TARGET): $(OBJS)
@@ -48,10 +48,14 @@ run: all
 
 # Clean up generated files
 clean:
-	rm -rf $(OBJ_DIR) $(BIN_DIR) $(DOXYGEN_DIR)
-	@echo "Cleaned up $(OBJ_DIR), $(BIN_DIR), and $(DOXYGEN_DIR)"
+	rm -rf $(OBJ_DIR) $(BIN_DIR) $(DOC_DIR)
+	@echo "Cleaned up $(OBJ_DIR), $(BIN_DIR), and $(DOC_DIR)"
 
 # Rebuild everything from scratch
 rebuild: clean all
+
+diagram: all
+	@doxygen Doxyfile
+	@hpp2plantuml -i "include/**/*.hpp" -o $(DOC_DIR)/class_diagrams.puml
 
 .PHONY: all clean rebuild run directories
