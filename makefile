@@ -54,8 +54,9 @@ clean:
 # Rebuild everything from scratch
 rebuild: clean all
 
-diagram: all
+diagram: directories
 	@doxygen Doxyfile
-	@hpp2plantuml -i "include/**/*.hpp" -o $(DOC_DIR)/class_diagrams.puml
+	@hpp2plantuml -i "include/**/*.hpp" -t $(DOC_DIR)/template.puml -o $(DOC_DIR)/class_diagrams.puml
+	@python3 scripts/generate_class_diagrams.py $(DOC_DIR)/class_diagrams.puml
 
 .PHONY: all clean rebuild run directories
