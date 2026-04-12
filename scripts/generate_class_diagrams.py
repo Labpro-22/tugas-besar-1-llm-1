@@ -11,7 +11,18 @@ def main():
     
     try:
         with open(input_file, "r") as f:
-            lines = f.readlines()
+            content = f.read()
+            
+        content = re.sub(
+            r'@startuml.*?(?=/\' Objects \')',
+            "@startuml\nskinparam classAttributeIconSize 0\ntop to bottom direction\nskinparam nodesep 150\nskinparam ranksep 250\nskinparam padding 10\nskinparam backgroundcolor transparent\n\n\n",
+            content,
+            flags=re.DOTALL
+        )
+        with open(input_file, "w") as f:
+            f.write(content)
+                
+        lines = content.splitlines(True)
     except FileNotFoundError:
         print(f"Error: {input_file} not found.")
         sys.exit(1)
