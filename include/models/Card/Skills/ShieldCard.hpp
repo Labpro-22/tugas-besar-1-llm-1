@@ -1,3 +1,4 @@
+#pragma once
 #include "SkillCard.hpp"
 
 /// @brief A card that protects the player from rent and other negative effects for 1 turn.
@@ -23,3 +24,4 @@ ShieldCard::ShieldCard(const std::string &name, const std::string &description, 
 ShieldCard::~ShieldCard()
 {
 }
+

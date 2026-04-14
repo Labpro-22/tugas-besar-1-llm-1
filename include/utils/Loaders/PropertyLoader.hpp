@@ -1,3 +1,4 @@
+#pragma once
 #include "Loader.hpp"
 #include <PropertyTile.hpp>
 

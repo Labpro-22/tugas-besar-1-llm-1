@@ -1,3 +1,4 @@
+#pragma once
 #include "ActionTile.hpp"
 
 /// @brief A tile that represents a festival tile where players can boost owned property rent prices.
@@ -21,3 +22,4 @@ FestivalTile::FestivalTile(const int id, const std::string &code, const std::str
 FestivalTile::~FestivalTile()
 {
 }
+

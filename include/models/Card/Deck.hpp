@@ -1,3 +1,4 @@
+#pragma once
 #include <vector>
 #pragma once
 
@@ -55,3 +56,4 @@ template <typename T>
 CardDeck<T>::~CardDeck()
 {
 }
+

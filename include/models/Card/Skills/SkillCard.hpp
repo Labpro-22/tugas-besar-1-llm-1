@@ -1,3 +1,4 @@
+#pragma once
 #include "Card.hpp"
 
 /// @brief A card that can be used by the player to gain an advantage in game. 
@@ -29,3 +30,4 @@ SkillCard::SkillCard(const std::string &name, const std::string &description) : 
 SkillCard::~SkillCard()
 {
 }
+

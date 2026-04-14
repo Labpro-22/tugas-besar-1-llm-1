@@ -1,3 +1,4 @@
+#pragma once
 #include "Card.hpp"
 
 /// @brief A community chest card that players can draw when they land on a Community Chest tile.
@@ -24,3 +25,4 @@ CommunityChestCard::CommunityChestCard(const std::string &name, const std::strin
 CommunityChestCard::~CommunityChestCard()
 {
 }
+

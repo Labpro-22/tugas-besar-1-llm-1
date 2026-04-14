@@ -1,3 +1,4 @@
+#pragma once
 #include <string>
 #include "Player.hpp"
 
@@ -34,3 +35,4 @@ Tile::Tile(const int id, const std::string &code, const std::string &name) : id(
 Tile::~Tile()
 {
 }
+

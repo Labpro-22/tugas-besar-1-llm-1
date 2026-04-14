@@ -1,3 +1,4 @@
+#pragma once
 #include "Tile.hpp"
 
 /// @brief A property tile on the board.

@@ -1,3 +1,4 @@
+#pragma once
 #include "ActionTile.hpp"
 
 enum class CardType

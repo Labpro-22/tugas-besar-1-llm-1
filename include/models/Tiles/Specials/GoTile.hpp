@@ -1,3 +1,4 @@
+#pragma once
 #include "SpecialTile.hpp"
 
 /// @brief The Go tile on the board where players collect salary when they pass or land on it.
@@ -26,3 +27,4 @@ GoTile::GoTile(const int id, const std::string &code, const std::string &name, i
 GoTile::~GoTile()
 {
 }
+

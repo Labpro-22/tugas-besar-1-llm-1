@@ -1,3 +1,4 @@
+#pragma once
 #include "string"
 #include "Player.hpp"
 
@@ -38,3 +39,4 @@ Card::Card(const std::string &name, const std::string &description) : id(nextCar
 Card::~Card()
 {
 }
+

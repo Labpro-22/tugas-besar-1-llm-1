@@ -1,3 +1,4 @@
+#pragma once
 #include "PropertyTile.hpp"
 
 /// @brief A railroad tile on the board.
@@ -26,3 +27,4 @@ RailroadTile::RailroadTile(const int id, const std::string &code, const std::str
 RailroadTile::~RailroadTile()
 {
 }
+

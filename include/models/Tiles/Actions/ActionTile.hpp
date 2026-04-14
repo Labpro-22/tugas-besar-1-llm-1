@@ -1,3 +1,4 @@
+#pragma once
 #include "Tile.hpp"
 
 /// @brief A tile that triggers an action when landed on.

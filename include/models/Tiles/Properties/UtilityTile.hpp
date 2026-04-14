@@ -1,3 +1,4 @@
+#pragma once
 #include "PropertyTile.hpp"
 
 /// @brief A utility tile on the board. (Electric Company and Water Works)
@@ -27,3 +28,4 @@ UtilityTile::UtilityTile(const int id, const std::string &code, const std::strin
 UtilityTile::~UtilityTile()
 {
 }
+

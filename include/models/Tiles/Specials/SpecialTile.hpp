@@ -1,3 +1,4 @@
+#pragma once
 #include "Tile.hpp"
 
 /// @brief A special tile on the board where specific actions occur when players land on it.
@@ -25,3 +26,4 @@ SpecialTile::SpecialTile(const int id, const std::string &code, const std::strin
 SpecialTile::~SpecialTile()
 {
 }
+

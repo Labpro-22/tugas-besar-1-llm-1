@@ -1,3 +1,4 @@
+#pragma once
 #include <exception>
 #include <string>
 
@@ -53,3 +54,4 @@ class GameStateException : public GameException
 public:
   GameStateException(const std::string &reason);
 };
+

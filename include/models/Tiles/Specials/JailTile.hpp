@@ -1,3 +1,4 @@
+#pragma once
 #include "SpecialTile.hpp"
 
 /// @brief A tile where players are placed when in jail.
@@ -26,3 +27,4 @@ JailTile::JailTile(const int id, const std::string &code, const std::string &nam
 JailTile::~JailTile()
 {
 }
+

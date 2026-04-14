@@ -1,3 +1,4 @@
+#pragma once
 #include "SkillCard.hpp"
 
 /// @brief A card that provides a random discount on purchases for 1 turn.
@@ -27,3 +28,4 @@ DiscountCard::DiscountCard(const std::string &name, const std::string &descripti
 DiscountCard::~DiscountCard()
 {
 }
+

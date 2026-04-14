@@ -1,3 +1,4 @@
+#pragma once
 #include "SpecialTile.hpp"
 
 /// @brief A free tile on the board where nothing happens.
@@ -21,3 +22,4 @@ FreeTile::FreeTile(const int id, const std::string &code, const std::string &nam
 FreeTile::~FreeTile()
 {
 }
+

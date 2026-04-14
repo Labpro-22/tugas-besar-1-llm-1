@@ -1,3 +1,4 @@
+#pragma once
 #include "SpecialTile.hpp"
 
 /// @brief A tile that sends the player to jail when they land on it.
@@ -21,3 +22,4 @@ GoToJailTile::GoToJailTile(const int id, const std::string &code, const std::str
 GoToJailTile::~GoToJailTile()
 {
 }
+

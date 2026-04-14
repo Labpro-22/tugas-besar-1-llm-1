@@ -1,3 +1,4 @@
+#pragma once
 #include "SkillCard.hpp"
 
 /// @brief A card that allows the player to move a randomized number of steps in any direction.
@@ -23,3 +24,4 @@ MoveCard::MoveCard(const std::string &name, const std::string &description, int 
 MoveCard::~MoveCard()
 {
 }
+

@@ -1,3 +1,4 @@
+#pragma once
 #include "SkillCard.hpp"
 
 /// @brief A card that allows the player to destroy an opponent's property in the game.
@@ -20,3 +21,4 @@ DemolitionCard::DemolitionCard(const std::string &name, const std::string &descr
 DemolitionCard::~DemolitionCard()
 {
 }
+

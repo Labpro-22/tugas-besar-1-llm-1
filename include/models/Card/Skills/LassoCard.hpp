@@ -1,3 +1,4 @@
+#pragma once
 #include "SkillCard.hpp"
 
 /// @brief A card that pulls the nearest opponent in front of the player towards the player.
@@ -20,3 +21,4 @@ LassoCard::LassoCard(const std::string &name, const std::string &description) : 
 LassoCard::~LassoCard()
 {
 }
+
