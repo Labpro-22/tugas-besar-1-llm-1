@@ -1,8 +1,7 @@
 #pragma once
-#include "string"
-#include "Player.hpp"
+#include <string>
 
-static int nextCardId = 1;
+class Player;
 
 /// @brief A base class for all cards in the game.
 class Card
@@ -22,21 +21,18 @@ public:
   /// @param name The name of the card.
   /// @param description The description of the card's effect.
   Card(const std::string &name, const std::string &description);
-  ~Card();
+  virtual ~Card();
+
+  /// @brief Gets the unique identifier of the card.
+  int getId() const;
+
+  /// @brief Gets the display name of the card.
+  const std::string &getName() const;
+
+  /// @brief Gets the description of the card's effect.
+  const std::string &getDescription() const;
 
   /// @brief Executes the action associated with the card.
   /// @param player The player who drew the card.
   virtual void executeAction(Player &player) = 0;
 };
-
-/// @brief Creates a new card with the given name and description.
-/// @param name The name of the card.
-/// @param description The description of the card's effect.
-Card::Card(const std::string &name, const std::string &description) : id(nextCardId++), name(name), description(description)
-{
-}
-
-Card::~Card()
-{
-}
-
