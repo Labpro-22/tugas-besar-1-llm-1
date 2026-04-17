@@ -1,8 +1,10 @@
 #include "Card.hpp"
 
+using namespace std;
+
 static int nextCardId = 1;
 
-Card::Card(const std::string &name, const std::string &description)
+Card::Card(const string &name, const string &description)
     : id(nextCardId++), name(name), description(description)
 {
 }
@@ -14,12 +16,12 @@ int Card::getId() const
     return id;
 }
 
-const std::string &Card::getName() const
+const string &Card::getName() const
 {
     return name;
 }
 
-const std::string &Card::getDescription() const
+const string &Card::getDescription() const
 {
     return description;
 }

@@ -1,7 +1,9 @@
 #include "SkillCard.hpp"
 #include "Player.hpp"
 
-SkillCard::SkillCard(const std::string &name, const std::string &description)
+using namespace std;
+
+SkillCard::SkillCard(const string &name, const string &description)
     : Card(name, description)
 {
 }
