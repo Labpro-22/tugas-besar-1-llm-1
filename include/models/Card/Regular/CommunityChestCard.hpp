@@ -1,28 +1,27 @@
 #pragma once
 #include "Card.hpp"
 
-/// @brief A community chest card that players can draw when they land on a Community Chest tile.
+/// @brief The fixed set of Community Chest card effects defined by the spec.
+enum class CommunityChestEffect
+{
+  BIRTHDAY_COLLECT_100,
+  DOCTOR_FEE_700,
+  CAMPAIGN_PAY_200
+};
+
+/// @brief A community chest card that players draw when they land on a Dana Umum tile.
 class CommunityChestCard : public Card
 {
 private:
-  /* data */
+  CommunityChestEffect effect;
+
 public:
-  /// @brief Creates a community chest card with the given name and description.
-  /// @param name The name of the community chest card.
-  /// @param description The description of the community chest card's effect.
-  CommunityChestCard(const std::string &name, const std::string &description);
+  CommunityChestCard(const std::string &name, const std::string &description, CommunityChestEffect effect);
   ~CommunityChestCard();
 
+  /// @brief Returns the effect type of this community chest card.
+  CommunityChestEffect getEffect() const;
+
   /// @brief Executes the action associated with the card.
-  /// @param player The player who drew the card.
   void executeAction(Player &player) override;
 };
-
-CommunityChestCard::CommunityChestCard(const std::string &name, const std::string &description) : Card(name, description)
-{
-}
-
-CommunityChestCard::~CommunityChestCard()
-{
-}
-
