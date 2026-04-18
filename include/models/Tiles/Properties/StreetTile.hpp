@@ -1,15 +1,17 @@
 #pragma once
 #include "PropertyTile.hpp"
-#include <vector>
+
+using namespace std;
 
 /// @brief A street tile on the board. (Real estate)
 class StreetTile : public PropertyTile {
 private:
     /// @brief The color group of the street, which determines rent and building rules.
-    std::string color;
+    string color;
 
-    /// @brief The base rent price for the street when no houses or hotels are built.
-    int rentBasePrice;
+    /// @brief Whether this street is currently treated as part of a monopoly.
+    bool monopolyOwned = false;
+
     /// @brief The current number of houses built on this street (0-4), 5 indicates a hotel is
     /// built.
     int propertyLevel = 0;
@@ -31,23 +33,67 @@ public:
     /// @param name The display name of the tile.
     /// @param price The purchase price of the street tile.
     /// @param color The color group this street belongs to.
-    /// @param rentBasePrice The base rent when no house or hotel is built.
+    /// @param mortgageValue The mortgage value of this street.
     /// @param housePrice The cost to build one house on this street.
     /// @param hotelPrice The cost to build one hotel on this street.
-    StreetTile(const int id, const std::string& code, const std::string& name, const int price,
-               std::string color, int rentBasePrice, int housePrice, int hotelPrice);
-    ~StreetTile();
+    /// @param rentByLevel Rent table indexed by building level (0..5).
+    StreetTile(const int id, const string& code, const string& name, const int price,
+               const string& color, int mortgageValue, int housePrice, int hotelPrice,
+               const vector<int>& rentByLevel);
+    ~StreetTile() override;
+
+    /// @brief Handles landing behavior on street tiles.
+    /// @param player The player who landed on this street.
+    void landedOn(Player& player) override;
+
+    /// @brief Gets the street color group.
+    /// @return Color group string.
+    const string& getColor() const;
+
+    /// @brief Gets current building level.
+    /// @return Current property level (0-5).
+    int getPropertyLevel() const;
+
+    /// @brief Sets building level.
+    /// @param level New level, clamped to range [0, 5].
+    void setPropertyLevel(int level);
+
+    /// @brief Attempts to build one house.
+    /// @return True if level increased, false otherwise.
+    bool buildHouse();
+
+    /// @brief Attempts to build hotel.
+    /// @return True if level set to hotel, false otherwise.
+    bool buildHotel();
+
+    /// @brief Gets house price.
+    /// @return House price.
+    int getHousePrice() const;
+
+    /// @brief Gets hotel price.
+    /// @return Hotel price.
+    int getHotelPrice() const;
+
+    /// @brief Activates festival effect for this street.
+    /// Each activation doubles rent multiplier up to a maximum of 8x,
+    /// and resets duration back to 3 turns.
+    /// @param multiplier Unused parameter kept for compatibility.
+    /// @param duration Unused parameter kept for compatibility.
+    void activateFestival(int multiplier, int duration);
+
+    /// @brief Decrements festival duration.
+    void tickFestival();
+
+    /// @brief Checks if owner monopolizes this street's color group.
+    /// @return True if owner controls all streets of this color.
+    bool isMonopolyOwned() const;
+
+    /// @brief Sets monopoly state from external game logic.
+    /// @param value Monopoly state value.
+    void setMonopolyOwned(bool value);
 
     /// @brief Calculates the rent for this street based on its current level of development and any
     /// active festivals.
     /// @return The total rent amount that must be paid when another player lands on this street.
     int calculateRent(const Player& player) const override;
 };
-
-StreetTile::StreetTile(const int id, const std::string& code, const std::string& name,
-                       const int price, std::string color, int rentBasePrice, int housePrice,
-                       int hotelPrice)
-    : PropertyTile(id, code, name, price), color(color), rentBasePrice(rentBasePrice),
-      housePrice(housePrice), hotelPrice(hotelPrice) {}
-
-StreetTile::~StreetTile() {}
