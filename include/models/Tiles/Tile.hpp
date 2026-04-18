@@ -20,14 +20,21 @@ public:
     /// @param code The unique 3-character code for the tile.
     /// @param name The name of the tile.
     Tile(const int id, const std::string& code, const std::string& name);
-    ~Tile();
+    virtual ~Tile();
+
+    /// @brief Gets unique identifier of the tile.
+    /// @return Tile id.
+    int getId() const;
+
+    /// @brief Gets unique tile code.
+    /// @return Tile code.
+    const std::string& getCode() const;
+
+    /// @brief Gets display name.
+    /// @return Tile name.
+    const std::string& getName() const;
 
     /// @brief Handles the event when a player lands on this tile.
     /// @param player The player who landed on the tile.
     virtual void landedOn(Player& player) = 0;
 };
-
-Tile::Tile(const int id, const std::string& code, const std::string& name)
-    : id(id), code(code), name(name) {}
-
-Tile::~Tile() {}
