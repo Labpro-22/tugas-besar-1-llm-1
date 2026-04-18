@@ -6,3 +6,15 @@ Project Structure ini hanyalah referensi, Anda dapat menyesuaikannya dengan kebu
 Diagram Prerequisites:
 [Doxygen](https://www.doxygen.nl/)
 [hpp2PlantUML](https://github.com/thibaultmarin/hpp2plantuml)
+
+### Please install clang formatter
+
+```bash
+sudo apt update && sudo apt install -y clang-format
+```
+
+### Manual commands
+
+```bash
+make format
+```

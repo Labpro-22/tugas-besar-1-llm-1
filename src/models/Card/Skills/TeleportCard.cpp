@@ -4,15 +4,12 @@
 
 using namespace std;
 
-TeleportCard::TeleportCard(const string &name, const string &description)
-    : SkillCard(name, description)
-{
-}
+TeleportCard::TeleportCard(const string& name, const string& description)
+    : SkillCard(name, description) {}
 
 TeleportCard::~TeleportCard() {}
 
-void TeleportCard::executeAction(Player &player)
-{
+void TeleportCard::executeAction(Player& player) {
     cout << "TeleportCard diaktifkan! Pilih petak tujuan." << endl;
     player.setUsedSkillThisTurn(true);
 }

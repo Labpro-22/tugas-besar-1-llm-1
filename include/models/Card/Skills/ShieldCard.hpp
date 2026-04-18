@@ -2,19 +2,18 @@
 #include "SkillCard.hpp"
 
 /// @brief A card that protects the player from rent and negative effects for 1 turn.
-class ShieldCard : public SkillCard
-{
+class ShieldCard : public SkillCard {
 private:
-  /// @brief The duration of the shield effect in turns.
-  int duration;
+    /// @brief The duration of the shield effect in turns.
+    int duration;
 
 public:
-  /// @brief Creates a shield card with the given configuration.
-  ShieldCard(const std::string &name, const std::string &description, int duration);
-  ~ShieldCard();
+    /// @brief Creates a shield card with the given configuration.
+    ShieldCard(const std::string& name, const std::string& description, int duration);
+    ~ShieldCard();
 
-  /// @brief Gets the duration (in turns) of the shield effect.
-  int getDuration() const;
+    /// @brief Gets the duration (in turns) of the shield effect.
+    int getDuration() const;
 
-  void executeAction(Player &player) override;
+    void executeAction(Player& player) override;
 };

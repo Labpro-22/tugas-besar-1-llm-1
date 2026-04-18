@@ -3,14 +3,10 @@
 
 using namespace std;
 
-SkillCard::SkillCard(const string &name, const string &description)
-    : Card(name, description)
-{
-}
+SkillCard::SkillCard(const string& name, const string& description) : Card(name, description) {}
 
 SkillCard::~SkillCard() {}
 
-bool SkillCard::usable(const Player &player) const
-{
+bool SkillCard::usable(const Player& player) const {
     return !player.getHasUsedSkillThisTurn() && !player.getHasRolledDice();
 }

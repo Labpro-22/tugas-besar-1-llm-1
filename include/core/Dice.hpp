@@ -1,11 +1,10 @@
 #pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
 
 /// @brief Simulates throwing two 6-sided dice for the game.
-class Dice
-{
+class Dice {
 private:
     /// @brief Result of the first die.
     int die1;

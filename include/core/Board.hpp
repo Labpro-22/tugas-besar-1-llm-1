@@ -1,13 +1,12 @@
 #pragma once
 
-#include <vector>
-#include <memory>
-#include "../models/Tiles/Tile.hpp"
 #include "../models/Players/Player.hpp"
+#include "../models/Tiles/Tile.hpp"
+#include <memory>
+#include <vector>
 
 /// @brief Manages the grid and specific tile positions of the Nimonspoli game board.
-class Board
-{
+class Board {
 private:
     /// @brief A collection of tiles representing the game board.
     std::vector<std::unique_ptr<Tile>> tiles;
@@ -15,7 +14,7 @@ private:
 public:
     /// @brief Creates the game board, optionally using dynamic board configuration.
     Board();
-    
+
     /// @brief Destructor for the board.
     ~Board();
 

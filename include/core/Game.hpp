@@ -1,20 +1,19 @@
 #pragma once
 
-#include <vector>
-#include <string>
-#include <memory>
-#include "Player.hpp"
 #include "Board.hpp"
-#include "Dice.hpp"
-#include "Deck.hpp"
 #include "ChanceCard.hpp"
 #include "CommunityChestCard.hpp"
+#include "Deck.hpp"
+#include "Dice.hpp"
+#include "Player.hpp"
 #include "SkillCard.hpp"
 #include "TransactionLogger.hpp"
+#include <memory>
+#include <string>
+#include <vector>
 
 /// @brief Determines the different statuses of the game cycle.
-enum class GameState
-{
+enum class GameState {
     MENU,
     PLAYING,
     AUCTION,
@@ -23,8 +22,7 @@ enum class GameState
 };
 
 /// @brief Oversees the main mechanics, game loop, rules, and turns of the Nimonspoli Game engine.
-class Game
-{
+class Game {
 private:
     std::vector<std::unique_ptr<Player>> players;
     std::unique_ptr<Board> board;
@@ -35,7 +33,7 @@ private:
     std::unique_ptr<CardDeck<SkillCard>> skillDeck;
 
     GameState state;
-    
+
     int activePlayerIndex;
     int currentTurn;
     int maxTurn;

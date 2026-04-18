@@ -3,6 +3,7 @@
 # Compiler settings
 CXX      := g++
 CXXFLAGS := -Wall -Wextra -std=c++17 -I include
+CLANG_FORMAT := $(shell command -v clang-format || command -v clang-format-18 || command -v clang-format-17 || command -v clang-format-16 || command -v clang-format-15 || command -v clang-format-14)
 
 # Directories
 SRC_DIR     := src
@@ -20,6 +21,7 @@ TARGET := $(BIN_DIR)/game
 # 1. Recursive Source Finding
 # Secara otomatis mencari semua file .cpp di dalam src/ dan semua sub-foldernya
 SRCS := $(shell find $(SRC_DIR) -name '*.cpp')
+FORMAT_FILES := $(shell find $(SRC_DIR) $(INCLUDE_DIR) -type f \( -name '*.cpp' -o -name '*.cc' -o -name '*.cxx' -o -name '*.hpp' -o -name '*.h' \))
 
 # 2. Dynamic Object Mapping
 # Mengubah path src/xxx/yyy.cpp menjadi build/xxx/yyy.o
@@ -54,9 +56,18 @@ clean:
 # Rebuild everything from scratch
 rebuild: clean all
 
+check-clang-format:
+	@[ -n "$(CLANG_FORMAT)" ] || { echo "Error: clang-format is not installed."; exit 1; }
+
+format: check-clang-format
+	$(CLANG_FORMAT) -i $(FORMAT_FILES)
+
+check-format: check-clang-format
+	@$(CLANG_FORMAT) -n --Werror $(FORMAT_FILES)
+
 diagram: directories
 	@doxygen Doxyfile
 	@hpp2plantuml -i "include/**/*.hpp" -t $(DOC_DIR)/template.puml -o $(DOC_DIR)/class_diagrams.puml
 	@python3 scripts/generate_class_diagrams.py $(DOC_DIR)/class_diagrams.puml
 
-.PHONY: all clean rebuild run directories
+.PHONY: all clean rebuild run directories check-clang-format format check-format

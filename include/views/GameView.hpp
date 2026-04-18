@@ -1,16 +1,15 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <memory>
 #include "Board.hpp"
 #include "Player.hpp"
 #include "PropertyTile.hpp"
 #include "TransactionLogger.hpp"
+#include <memory>
+#include <string>
+#include <vector>
 
 /// @brief Determines which UI element is being displayed at a given time in the lifecycle.
-enum class ViewState
-{
+enum class ViewState {
     MAIN_MENU,
     IN_GAME,
     AUCTION_PANEL,
@@ -19,8 +18,7 @@ enum class ViewState
 };
 
 /// @brief A terminal-based presentation layer that renders the game state and handles user inputs.
-class GameView
-{
+class GameView {
 private:
     /// @brief Clears the screen dynamically based on the terminal operating system.
     void clearScreen() const;
@@ -30,7 +28,8 @@ public:
     GameView();
     ~GameView();
 
-    /// @brief Prints the main menu of the game where users can start a new game or load a saved one.
+    /// @brief Prints the main menu of the game where users can start a new game or load a saved
+    /// one.
     void displayMainMenu() const;
 
     /// @brief Prompts for username settings and number of players at the beginning of the setup.
@@ -54,9 +53,11 @@ public:
     /// @param currentBid The highest ongoing offered price.
     /// @param highBidder The username of the user leading the auction.
     /// @param tile The property tile currently in the auction round.
-    void renderAuctionPanel(int currentBid, const std::string& highBidder, const PropertyTile& tile) const;
+    void renderAuctionPanel(int currentBid, const std::string& highBidder,
+                            const PropertyTile& tile) const;
 
-    /// @brief Renders the interactive command prompt containing context actions for a specific player's turn.
+    /// @brief Renders the interactive command prompt containing context actions for a specific
+    /// player's turn.
     /// @param activePlayer Reference to the player whose turn is ongoing.
     /// @return String representation of the submitted and trimmed input.
     std::string getCommandInput(const Player& activePlayer) const;
@@ -68,5 +69,6 @@ public:
     /// @brief Declares visually the ending sequences and rankings.
     /// @param winners A collection of the winner player instances or names.
     /// @param finalRankings Collection storing leaderboard metadata string summaries.
-    void showEndGameScreen(const std::vector<std::string>& winners, const std::vector<std::string>& finalRankings) const;
+    void showEndGameScreen(const std::vector<std::string>& winners,
+                           const std::vector<std::string>& finalRankings) const;
 };

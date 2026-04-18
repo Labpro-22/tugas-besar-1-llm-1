@@ -4,40 +4,34 @@
 
 using namespace std;
 
-CommunityChestCard::CommunityChestCard(const string &name, const string &description, CommunityChestEffect effect)
-    : Card(name, description), effect(effect)
-{
-}
+CommunityChestCard::CommunityChestCard(const string& name, const string& description,
+                                       CommunityChestEffect effect)
+    : Card(name, description), effect(effect) {}
 
 CommunityChestCard::~CommunityChestCard() {}
 
-CommunityChestEffect CommunityChestCard::getEffect() const
-{
+CommunityChestEffect CommunityChestCard::getEffect() const {
     return effect;
 }
 
-void CommunityChestCard::executeAction(Player &player)
-{
+void CommunityChestCard::executeAction(Player& player) {
     cout << "Kartu Dana Umum: " << getName() << endl;
     cout << "Efek: " << getDescription() << endl;
 
-    switch (effect)
-    {
+    switch (effect) {
     case CommunityChestEffect::BIRTHDAY_COLLECT_100:
         cout << player.getUsername() << " menerima M100 dari setiap pemain lainnya." << endl;
         break;
 
-    case CommunityChestEffect::DOCTOR_FEE_700:
-    {
+    case CommunityChestEffect::DOCTOR_FEE_700: {
         const int fee = 700;
-        if (player.getMoney() < fee)
-        {
-            cout << player.getUsername() << " tidak mampu membayar biaya dokter (M" << fee << ")." << endl;
-        }
-        else
-        {
+        if (player.getMoney() < fee) {
+            cout << player.getUsername() << " tidak mampu membayar biaya dokter (M" << fee << ")."
+                 << endl;
+        } else {
             player -= fee;
-            cout << player.getUsername() << " membayar M" << fee << " ke Bank. Sisa uang: M" << player.getMoney() << "." << endl;
+            cout << player.getUsername() << " membayar M" << fee << " ke Bank. Sisa uang: M"
+                 << player.getMoney() << "." << endl;
         }
         break;
     }
