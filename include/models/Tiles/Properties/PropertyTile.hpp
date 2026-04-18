@@ -11,6 +11,12 @@ enum class PropertyStatus {
     MORTGAGED
 };
 
+enum class PropertyType {
+    STREET,
+    RAILROAD,
+    UTILITY
+};
+
 /// @brief A property tile on the board.
 class PropertyTile : public Tile {
 private:
@@ -19,6 +25,9 @@ private:
 
     /// @brief The status of the property (owned, mortgaged, or bank-owned).
     PropertyStatus status = PropertyStatus::BANK;
+
+    /// @brief The explicit type of this property.
+    PropertyType type;
 
     /// @brief The price of the property.
     int price;
@@ -34,11 +43,12 @@ public:
     /// @param id The unique identifier of the tile.
     /// @param code The unique 3-character code of the tile.
     /// @param name The display name of the tile.
+    /// @param type The explicit type of the property (Street/Railroad/Utility).
     /// @param price The purchase price of the property.
     /// @param mortgageValue The mortgage value of the property.
     /// @param rentTable Rent table used by concrete property types.
-    PropertyTile(const int id, const string& code, const string& name, const int price,
-                 int mortgageValue, const vector<int>& rentTable = {});
+    PropertyTile(const int id, const string& code, const string& name, PropertyType type,
+                 const int price, int mortgageValue, const vector<int>& rentTable = {});
     ~PropertyTile() override;
 
     /// @brief Handles the default property landing behavior (rent payment if applicable).
@@ -67,6 +77,10 @@ public:
     /// @brief Gets purchase price.
     /// @return Property purchase price.
     int getPrice() const;
+
+    /// @brief Gets property type.
+    /// @return Explicit property type.
+    PropertyType getType() const;
 
     /// @brief Gets mortgage value.
     /// @return Property mortgage value.

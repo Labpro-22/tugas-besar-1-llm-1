@@ -4,9 +4,9 @@
 
 using namespace std;
 
-PropertyTile::PropertyTile(const int id, const string& code, const string& name, const int price,
-                           int mortgageValue, const vector<int>& rentTable)
-    : Tile(id, code, name), owner(nullptr), status(PropertyStatus::BANK), price(price),
+PropertyTile::PropertyTile(const int id, const string& code, const string& name, PropertyType type,
+                           const int price, int mortgageValue, const vector<int>& rentTable)
+    : Tile(id, code, name), owner(nullptr), status(PropertyStatus::BANK), type(type), price(price),
       mortgageValue(mortgageValue), rentTable(rentTable) {}
 
 PropertyTile::~PropertyTile() = default;
@@ -46,6 +46,10 @@ void PropertyTile::setStatus(PropertyStatus newStatus) {
 
 int PropertyTile::getPrice() const {
     return price;
+}
+
+PropertyType PropertyTile::getType() const {
+    return type;
 }
 
 int PropertyTile::getMortgageValue() const {
