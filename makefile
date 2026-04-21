@@ -54,8 +54,8 @@ run: all
 
 # Clean up generated files
 clean:
-	rm -rf $(OBJ_DIR) $(BIN_DIR) $(DOC_DIR)
-	@echo "Cleaned up $(OBJ_DIR), $(BIN_DIR), and $(DOC_DIR)"
+	rm -rf $(OBJ_DIR) $(BIN_DIR)
+	@echo "Cleaned up $(OBJ_DIR) and $(BIN_DIR)"
 
 # Rebuild everything from scratch
 rebuild: clean all
