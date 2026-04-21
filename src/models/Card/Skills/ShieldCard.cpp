@@ -1,4 +1,5 @@
 #include "ShieldCard.hpp"
+#include "IGameContext.hpp"
 #include "Player.hpp"
 #include <iostream>
 
@@ -13,11 +14,9 @@ int ShieldCard::getDuration() const {
     return duration;
 }
 
-void ShieldCard::executeAction(Player& player) {
+void ShieldCard::executeAction(IGameContext& ctx) {
+    Player& player = ctx.getActivePlayer();
     player.activateShield(duration);
-
     cout << "ShieldCard diaktifkan! Anda kebal terhadap tagihan atau sanksi selama " << duration
          << " giliran." << endl;
-
-    player.setUsedSkillThisTurn(true);
 }

@@ -1,4 +1,5 @@
 #include "CommunityChestCard.hpp"
+#include "IGameContext.hpp"
 #include "Player.hpp"
 #include <iostream>
 
@@ -14,30 +15,28 @@ CommunityChestEffect CommunityChestCard::getEffect() const {
     return effect;
 }
 
-void CommunityChestCard::executeAction(Player& player) {
-    cout << "Kartu Dana Umum: " << getName() << endl;
-    cout << "Efek: " << getDescription() << endl;
+void CommunityChestCard::executeAction(IGameContext& ctx) {
+    Player& player = ctx.getActivePlayer();
+    cout << "Kartu Dana Umum: " << getName() << "\n"
+         << "Efek: " << getDescription() << endl;
 
     switch (effect) {
     case CommunityChestEffect::BIRTHDAY_COLLECT_100:
-        cout << player.getUsername() << " menerima M100 dari setiap pemain lainnya." << endl;
+        // Collect 100 from every other active player
+        ctx.collectFromAll(player, 100);
+        cout << player.getUsername() << " menerima M100 dari setiap pemain." << endl;
         break;
 
-    case CommunityChestEffect::DOCTOR_FEE_700: {
-        const int fee = 700;
-        if (player.getMoney() < fee) {
-            cout << player.getUsername() << " tidak mampu membayar biaya dokter (M" << fee << ")."
-                 << endl;
-        } else {
-            player -= fee;
-            cout << player.getUsername() << " membayar M" << fee << " ke Bank. Sisa uang: M"
-                 << player.getMoney() << "." << endl;
-        }
+    case CommunityChestEffect::DOCTOR_FEE_700:
+        // Pay 700 to the bank; chargeToBank triggers bankruptcy if insufficient
+        ctx.chargeToBank(player, 700);
+        cout << player.getUsername() << " membayar M700 biaya dokter ke Bank." << endl;
         break;
-    }
 
     case CommunityChestEffect::CAMPAIGN_PAY_200:
-        cout << player.getUsername() << " harus membayar M200 ke setiap pemain lainnya." << endl;
+        // Pay 200 to every other active player
+        ctx.payToAll(player, 200);
+        cout << player.getUsername() << " membayar M200 ke setiap pemain." << endl;
         break;
     }
 }
