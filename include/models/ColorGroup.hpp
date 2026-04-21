@@ -17,24 +17,35 @@ enum class ColorGroup {
 
 inline std::string colorGroupToString(ColorGroup group) {
     switch (group) {
-    case ColorGroup::BROWN:      return "COKLAT";
-    case ColorGroup::LIGHT_BLUE: return "BIRU_MUDA";
-    case ColorGroup::PINK:       return "MERAH_MUDA";
-    case ColorGroup::ORANGE:     return "ORANGE";
-    case ColorGroup::RED:        return "MERAH";
-    case ColorGroup::YELLOW:     return "KUNING";
-    case ColorGroup::GREEN:      return "HIJAU";
-    case ColorGroup::DARK_BLUE:  return "BIRU_TUA";
-    case ColorGroup::RAILROAD:   return "STASIUN";
-    case ColorGroup::UTILITY:    return "UTILITAS";
-    default:                     return "DEFAULT";
+    case ColorGroup::BROWN:
+        return "COKLAT";
+    case ColorGroup::LIGHT_BLUE:
+        return "BIRU_MUDA";
+    case ColorGroup::PINK:
+        return "MERAH_MUDA";
+    case ColorGroup::ORANGE:
+        return "ORANGE";
+    case ColorGroup::RED:
+        return "MERAH";
+    case ColorGroup::YELLOW:
+        return "KUNING";
+    case ColorGroup::GREEN:
+        return "HIJAU";
+    case ColorGroup::DARK_BLUE:
+        return "BIRU_TUA";
+    case ColorGroup::RAILROAD:
+        return "STASIUN";
+    case ColorGroup::UTILITY:
+        return "UTILITY";
+    default:
+        return "DEFAULT";
     }
 }
 
 inline ColorGroup colorGroupFromString(const std::string& s) {
     if (s == "COKLAT") {
         return ColorGroup::BROWN;
-    }     
+    }
     if (s == "BIRU_MUDA") {
         return ColorGroup::LIGHT_BLUE;
     }

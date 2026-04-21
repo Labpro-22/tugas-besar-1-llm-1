@@ -53,7 +53,7 @@ vector<string> GameView::promptPlayerSetup() const {
         while (true) {
             cout << "Nama pemain " << (i + 1) << ": ";
             cin >> names[i];
-            
+
             bool duplicate = false;
             for (int j = 0; j < i; ++j) {
                 if (names[j] == names[i]) {
@@ -72,8 +72,7 @@ vector<string> GameView::promptPlayerSetup() const {
     return names;
 }
 
-void GameView::printBoard(const Board& board,
-                          const vector<unique_ptr<Player>>& players,
+void GameView::printBoard(const Board& board, const vector<unique_ptr<Player>>& players,
                           int currentTurn, int maxTurn) const {
     int totalTiles = board.getTotalTiles();
     if (totalTiles == 0) {
@@ -81,51 +80,53 @@ void GameView::printBoard(const Board& board,
         return;
     }
 
-    const int CW = 10;       // cell content width (visible chars)
+    const int CW = 10; // cell content width (visible chars)
     const int COLS = 11;
     const int INNER_W = 9 * (CW + 1) - 1; // 98 — interior span between border cells
 
     // ── ANSI colour helpers ─────────────────────────────────────────────────────
     auto ansi = [](const string& cc) -> string {
         if (cc == "CK") {
-            return "\033[33m";         // brown → yellow
+            return "\033[33m"; // brown → yellow
         }
         if (cc == "BM") {
-            return "\033[96m";         // light blue → bright cyan
+            return "\033[96m"; // light blue → bright cyan
         }
         if (cc == "PK") {
-            return "\033[95m";         // pink → bright magenta
+            return "\033[95m"; // pink → bright magenta
         }
         if (cc == "OR") {
-            return "\033[38;5;208m";   // orange
+            return "\033[38;5;208m"; // orange
         }
         if (cc == "MR") {
-            return "\033[91m";         // red
+            return "\033[91m"; // red
         }
         if (cc == "KN") {
-            return "\033[93m";         // yellow
+            return "\033[93m"; // yellow
         }
         if (cc == "HJ") {
-            return "\033[92m";         // green
+            return "\033[92m"; // green
         }
         if (cc == "BT") {
-            return "\033[94m";         // dark blue
+            return "\033[94m"; // dark blue
         }
         if (cc == "AB") {
-            return "\033[97m";         // utility → bright white
+            return "\033[97m"; // utility → bright white
         }
-        return "\033[37m";                          // DF → white
+        return "\033[37m"; // DF → white
     };
     const string RST = "\033[0m";
 
     // ── Helpers ─────────────────────────────────────────────────────────────────
     auto pad = [](const string& s, int w) -> string {
-        if (static_cast<int>(s.size()) >= w) return s.substr(0, w);
+        if (static_cast<int>(s.size()) >= w)
+            return s.substr(0, w);
         return s + string(w - static_cast<int>(s.size()), ' ');
     };
 
     auto centerStr = [](const string& s, int w) -> string {
-        if (static_cast<int>(s.size()) >= w) return s.substr(0, w);
+        if (static_cast<int>(s.size()) >= w)
+            return s.substr(0, w);
         int lp = (w - static_cast<int>(s.size())) / 2;
         string r = string(lp, ' ') + s;
         r += string(w - static_cast<int>(r.size()), ' ');
@@ -134,28 +135,40 @@ void GameView::printBoard(const Board& board,
 
     // ── Position mapping: grid (row,col) → board position ───────────────────────
     auto getPos = [](int row, int col) -> int {
-        if (row == 10) return 10 - col;     // bottom row: right-to-left
-        if (row == 0)  return 20 + col;     // top row:    left-to-right
-        if (col == 0)  return 20 - row;     // left col:   top-to-bottom
-        return (30 + row) % 40;             // right col:  top-to-bottom
+        if (row == 10)
+            return 10 - col; // bottom row: right-to-left
+        if (row == 0)
+            return 20 + col; // top row:    left-to-right
+        if (col == 0)
+            return 20 - row;    // left col:   top-to-bottom
+        return (30 + row) % 40; // right col:  top-to-bottom
     };
 
     // ── Colour-group code for tile ──────────────────────────────────────────────
     auto getCC = [](Tile* t) -> string {
         if (auto* s = dynamic_cast<const StreetTile*>(t)) {
             switch (s->getColorGroup()) {
-                case ColorGroup::BROWN:      return "CK";
-                case ColorGroup::LIGHT_BLUE: return "BM";
-                case ColorGroup::PINK:       return "PK";
-                case ColorGroup::ORANGE:     return "OR";
-                case ColorGroup::RED:        return "MR";
-                case ColorGroup::YELLOW:     return "KN";
-                case ColorGroup::GREEN:      return "HJ";
-                case ColorGroup::DARK_BLUE:  return "BT";
+            case ColorGroup::BROWN:
+                return "CK";
+            case ColorGroup::LIGHT_BLUE:
+                return "BM";
+            case ColorGroup::PINK:
+                return "PK";
+            case ColorGroup::ORANGE:
+                return "OR";
+            case ColorGroup::RED:
+                return "MR";
+            case ColorGroup::YELLOW:
+                return "KN";
+            case ColorGroup::GREEN:
+                return "HJ";
+            case ColorGroup::DARK_BLUE:
+                return "BT";
             }
         }
         if (auto* p = dynamic_cast<const PropertyTile*>(t))
-            if (p->getType() == PropertyType::UTILITY) return "AB";
+            if (p->getType() == PropertyType::UTILITY)
+                return "AB";
         return "DF";
     };
 
@@ -164,36 +177,46 @@ void GameView::printBoard(const Board& board,
     // ── Print cell Line 1: [CC] NNN  (ANSI coloured bracket) ────────────────────
     auto printL1 = [&](int pos) {
         Tile* t = board.getTileAt(pos);
-        if (!t) { cout << string(CW, ' '); return; }
+        if (!t) {
+            cout << string(CW, ' ');
+            return;
+        }
         string cc = getCC(t);
         string code = t->getCode();
-        while (static_cast<int>(code.size()) < 3) code += ' ';
+        while (static_cast<int>(code.size()) < 3)
+            code += ' ';
         code = code.substr(0, 3);
         // visible width = [CC] NNN = 4+1+3 = 8, pad remaining
-        cout << ansi(cc) << "[" << cc << "]" << RST << " " << code
-             << string(max(0, CW - 8), ' ');
+        cout << ansi(cc) << "[" << cc << "]" << RST << " " << code << string(max(0, CW - 8), ' ');
     };
 
     // ── Print cell Line 2: ownership / building / player tokens ─────────────────
     auto printL2 = [&](int pos) {
         Tile* t = board.getTileAt(pos);
-        if (!t) { cout << string(CW, ' '); return; }
+        if (!t) {
+            cout << string(CW, ' ');
+            return;
+        }
         string content;
 
         if (pos == jailPos) {
             // Jail: show IN:<player-ids> V:<player-ids>
             string inIds, visIds;
             for (const auto& p : players) {
-                if (p->getStatus() == PlayerStatus::BANKRUPT) continue;
-                if (p->getPosition() != jailPos) continue;
+                if (p->getStatus() == PlayerStatus::BANKRUPT)
+                    continue;
+                if (p->getPosition() != jailPos)
+                    continue;
                 if (p->isInJail())
                     inIds += to_string(p->getId() + 1);
                 else
                     visIds += to_string(p->getId() + 1);
             }
-            if (!inIds.empty()) content += "IN:" + inIds;
+            if (!inIds.empty())
+                content += "IN:" + inIds;
             if (!visIds.empty()) {
-                if (!content.empty()) content += " ";
+                if (!content.empty())
+                    content += " ";
                 content += "V:" + visIds;
             }
         } else {
@@ -203,16 +226,21 @@ void GameView::printBoard(const Board& board,
                 content += "P" + to_string(prop->getOwner()->getId() + 1);
                 if (auto* st = dynamic_cast<const StreetTile*>(prop)) {
                     int lvl = st->getPropertyLevel();
-                    if (lvl == 5) content += " *";
-                    else if (lvl > 0) content += " " + string(lvl, '^');
+                    if (lvl == 5)
+                        content += " *";
+                    else if (lvl > 0)
+                        content += " " + string(lvl, '^');
                 }
             }
             // Player bidak markers
             for (const auto& p : players) {
-                if (p->getStatus() == PlayerStatus::BANKRUPT) continue;
-                if (p->getPosition() != pos) continue;
+                if (p->getStatus() == PlayerStatus::BANKRUPT)
+                    continue;
+                if (p->getPosition() != pos)
+                    continue;
                 string mk = "(" + to_string(p->getId() + 1) + ")";
-                if (!content.empty() && static_cast<int>(content.size()) + static_cast<int>(mk.size()) + 1 <= CW)
+                if (!content.empty() &&
+                    static_cast<int>(content.size()) + static_cast<int>(mk.size()) + 1 <= CW)
                     content += " ";
                 content += mk;
             }
@@ -236,10 +264,9 @@ void GameView::printBoard(const Board& board,
 
     string titleBox = string(34, '=');
     string titleTxt = "||          NIMONSPOLI          ||";
-    string divider  = string(34, '-');
-    string turnStr  = currentTurn >= 0
-                          ? "TURN " + to_string(currentTurn) + " / " + to_string(maxTurn)
-                          : "";
+    string divider = string(34, '-');
+    string turnStr =
+        currentTurn >= 0 ? "TURN " + to_string(currentTurn) + " / " + to_string(maxTurn) : "";
 
     // Map: interior index layout
     // Row 1: content[0], content[1]     → L1, L2
@@ -250,20 +277,20 @@ void GameView::printBoard(const Board& board,
 
     // Content lines (indices 0..17 → 9 rows × 2 lines)
     // c[0],c[1] = Row1 (SBY/BDG): empty
-    interior[0]  = pad("", INNER_W);
-    interior[1]  = pad("", INNER_W);
+    interior[0] = pad("", INNER_W);
+    interior[1] = pad("", INNER_W);
     // c[2],c[3] = Row2 (SMG/DEN): NIMONSPOLI box top + title
-    interior[2]  = centerStr(titleBox, INNER_W);
-    interior[3]  = centerStr(titleTxt, INNER_W);
+    interior[2] = centerStr(titleBox, INNER_W);
+    interior[3] = centerStr(titleTxt, INNER_W);
     // c[4],c[5] = Row3 (DNU/FES): empty + TURN
-    interior[4]  = pad("", INNER_W);
-    interior[5]  = centerStr(turnStr, INNER_W);
+    interior[4] = pad("", INNER_W);
+    interior[5] = centerStr(turnStr, INNER_W);
     // c[6],c[7] = Row4 (MAL/MTR): empty + separator
-    interior[6]  = pad("", INNER_W);
-    interior[7]  = centerStr(divider, INNER_W);
+    interior[6] = pad("", INNER_W);
+    interior[7] = centerStr(divider, INNER_W);
     // c[8],c[9] = Row5 (STB/GUB): P1-P4 + ^
-    interior[8]  = centerStr("P1-P4 : Properti milik Pemain 1-4", INNER_W);
-    interior[9]  = centerStr("^     : Rumah Level 1", INNER_W);
+    interior[8] = centerStr("P1-P4 : Properti milik Pemain 1-4", INNER_W);
+    interior[9] = centerStr("^     : Rumah Level 1", INNER_W);
     // c[10],c[11] = Row6 (YOG/KSP): ^^^ + *
     interior[10] = centerStr("^^^   : Rumah Level 3", INNER_W);
     interior[11] = centerStr("* : Hotel (Maksimal)", INNER_W);
@@ -274,7 +301,7 @@ void GameView::printBoard(const Board& board,
     interior[14] = centerStr("[BM]=Biru Muda [KN]=Kuning", INNER_W);
     interior[15] = centerStr("[PK]=Pink      [HJ]=Hijau", INNER_W);
     // c[16],c[17] = Row9 (MGL/IKN): [DF]+[AB] + empty
-    interior[16] = centerStr("[DF]=Aksi      [AB]=Utilitas", INNER_W);
+    interior[16] = centerStr("[DF]=Aksi      [AB]=Utility", INNER_W);
     interior[17] = pad("", INNER_W);
 
     // Separator lines between interior rows (indices 18..25 → 8 separators)
@@ -303,9 +330,8 @@ void GameView::printBoard(const Board& board,
         } else {
             // Partial separator with interior text
             int sepIdx = 18 + (row - 2); // row2→18, row3→19, ..., row9→25
-            cout << "+" << string(CW, '-') << "+"
-                 << interior[sepIdx]
-                 << "+" << string(CW, '-') << "+\n";
+            cout << "+" << string(CW, '-') << "+" << interior[sepIdx] << "+" << string(CW, '-')
+                 << "+\n";
         }
 
         // --- Line 1 (tile name) ---
@@ -346,8 +372,8 @@ void GameView::printBoard(const Board& board,
     cout << "\nPEMAIN: ";
     for (const auto& p : players) {
         if (p->getStatus() != PlayerStatus::BANKRUPT) {
-            cout << "P" << (p->getId() + 1) << "=" << p->getUsername()
-                 << "(M" << p->getMoney() << ",pos" << p->getPosition() << ")  ";
+            cout << "P" << (p->getId() + 1) << "=" << p->getUsername() << "(M" << p->getMoney()
+                 << ",pos" << p->getPosition() << ")  ";
         }
     }
     cout << "\n\n";
@@ -358,17 +384,26 @@ void GameView::printPropertyDeed(const PropertyTile& property) const {
     cout << "AKTA: " << property.getName() << " [" << property.getCode() << "]\n";
     cout << "Tipe: ";
     switch (property.getType()) {
-        case PropertyType::STREET:   cout << "Lahan"; break;
-        case PropertyType::RAILROAD: cout << "Stasiun"; break;
-        case PropertyType::UTILITY:  cout << "Utilitas"; break;
+    case PropertyType::STREET:
+        cout << "Lahan";
+        break;
+    case PropertyType::RAILROAD:
+        cout << "Stasiun";
+        break;
+    case PropertyType::UTILITY:
+        cout << "Utility";
+        break;
     }
     cout << "\n";
     cout << "Harga beli  : M" << property.getPrice() << "\n";
     cout << "Nilai gadai : M" << property.getMortgageValue() << "\n";
     cout << "Status      : ";
-    if (property.isBankOwned()) cout << "Milik Bank";
-    else if (property.isMortgaged()) cout << "DIGADAI oleh " << property.getOwner()->getUsername();
-    else cout << "Dimiliki oleh " << property.getOwner()->getUsername();
+    if (property.isBankOwned())
+        cout << "Milik Bank";
+    else if (property.isMortgaged())
+        cout << "DIGADAI oleh " << property.getOwner()->getUsername();
+    else
+        cout << "Dimiliki oleh " << property.getOwner()->getUsername();
     cout << "\n";
 
     const auto* street = dynamic_cast<const StreetTile*>(&property);
@@ -377,15 +412,18 @@ void GameView::printPropertyDeed(const PropertyTile& property) const {
         cout << "Monopoli    : " << (street->isMonopolyOwned() ? "Ya" : "Tidak") << "\n";
         int lvl = street->getPropertyLevel();
         cout << "Bangunan    : ";
-        if (lvl == 0) cout << "Kosong";
-        else if (lvl == 5) cout << "Hotel";
-        else cout << lvl << " rumah";
+        if (lvl == 0)
+            cout << "Kosong";
+        else if (lvl == 5)
+            cout << "Hotel";
+        else
+            cout << lvl << " rumah";
         cout << "\n";
         cout << "Harga rumah : M" << street->getHousePrice() << "\n";
         cout << "Harga hotel : M" << street->getHotelPrice() << "\n";
         if (street->hasFestival()) {
-            cout << "Festival    : aktif x" << street->getFestivalMultiplier()
-                 << ", sisa " << street->getFestivalDur() << " giliran\n";
+            cout << "Festival    : aktif x" << street->getFestivalMultiplier() << ", sisa "
+                 << street->getFestivalDur() << " giliran\n";
         }
         cout << "--- Tabel Sewa ---\n";
         const string labels[] = {"Kosong", "1 Rumah", "2 Rumah", "3 Rumah", "4 Rumah", "Hotel"};
@@ -412,7 +450,8 @@ void GameView::printPlayerProperties(const Player& player) const {
     cout << "=== Properti milik " << player.getUsername() << " ===\n";
     for (const PropertyTile* p : props) {
         cout << "  [" << p->getCode() << "] " << p->getName();
-        if (p->isMortgaged()) cout << " [GADAI]";
+        if (p->isMortgaged())
+            cout << " [GADAI]";
         const auto* s = dynamic_cast<const StreetTile*>(p);
         if (s && s->getPropertyLevel() > 0) {
             int lvl = s->getPropertyLevel();
@@ -459,8 +498,10 @@ void GameView::showEndGameScreen(const vector<string>& winners,
     cout << "             PERMAINAN SELESAI!             \n";
     cout << "============================================\n";
     cout << "Pemenang: ";
-    for (const string& w : winners) cout << w << "  ";
+    for (const string& w : winners)
+        cout << w << "  ";
     cout << "\n\nPeringkat Akhir:\n";
-    for (const string& r : finalRankings) cout << "  " << r << "\n";
+    for (const string& r : finalRankings)
+        cout << "  " << r << "\n";
     cout << "============================================\n";
 }
