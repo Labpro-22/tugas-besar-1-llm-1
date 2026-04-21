@@ -1,18 +1,25 @@
 #pragma once
 
+#include "AuctionManager.hpp"
+#include "BankruptcyHandler.hpp"
 #include "Board.hpp"
-#include "ChanceCard.hpp"
-#include "CommunityChestCard.hpp"
-#include "Deck.hpp"
 #include "Dice.hpp"
-#include "Player.hpp"
-#include "SkillCard.hpp"
-#include "TransactionLogger.hpp"
+#include "GameConfig.hpp"
+#include "IGameContext.hpp"
+#include "Logger.hpp"
+#include "TurnManager.hpp"
+#include "Deck.hpp"
 #include <memory>
 #include <string>
 #include <vector>
 
-/// @brief Determines the different statuses of the game cycle.
+class Player;
+class ChanceCard;
+class CommunityChestCard;
+class SkillCard;
+class GameView;
+class ConfigManager;
+
 enum class GameState {
     MENU,
     PLAYING,
@@ -21,9 +28,22 @@ enum class GameState {
     GAMEOVER
 };
 
-/// @brief Oversees the main mechanics, game loop, rules, and turns of the Nimonspoli Game engine.
-class Game {
+/**
+ * @brief Top-level game engine — thin orchestrator, implements IGameContext.
+ *
+ * Responsibilities:
+ * - Own the canonical game state (players, board, decks, config).
+ * - Implement IGameContext so Tiles and Cards can trigger game events
+ * without coupling to this concrete class.
+ * - Delegate turn logic to TurnManager, auctions to AuctionManager,
+ * and bankruptcy to BankruptcyHandler.
+ * - Delegate all I/O to GameView.
+ */
+class Game : public IGameContext {
+    friend class GameSaveLoader;
+
 private:
+    // ── State ──────────────────────────────────────────────────────────────────
     std::vector<std::unique_ptr<Player>> players;
     std::unique_ptr<Board> board;
     std::unique_ptr<Dice> dice;
@@ -32,48 +52,98 @@ private:
     std::unique_ptr<CardDeck<CommunityChestCard>> communityDeck;
     std::unique_ptr<CardDeck<SkillCard>> skillDeck;
 
-    GameState state;
+    // Card object storage — decks hold raw pointers; these own the card objects
+    std::vector<std::unique_ptr<ChanceCard>> chanceCards;
+    std::vector<std::unique_ptr<CommunityChestCard>> communityCards;
+    std::vector<std::unique_ptr<SkillCard>> allSkillCards;
 
-    int activePlayerIndex;
-    int currentTurn;
-    int maxTurn;
+    GameConfig config;
+    GameState state;
+    Logger logger;
+    int lastDiceTotal;
+
+    // ── Subsystems ─────────────────────────────────────────────────────────────
+    TurnManager turnManager;
+    AuctionManager auctionManager;
+    BankruptcyHandler bankruptcyHandler;
+
+    // ── UI layer (not owned — must outlive Game) ───────────────────────────────
+    GameView* view; ///< Set via setView(); game cannot run without a view
+
+    // ── Board & turn helpers ───────────────────────────────────────────────────
+    std::vector<Player*> getActivePlayers() const;
+    void buildBoard(ConfigManager& cfg);
+    void distributeSkillCards();
+    void updateMonopolyStatus();
+    void resetGameData();
+
+    // ── Per-turn helpers ───────────────────────────────────────────────────────
+    void runTurn(Player& player);
+    bool handleJailTurn(Player& player); ///< Returns true if player exited jail via double (extra turn granted)
+    void handleCardDrop(Player& player, SkillCard* newCard);
+
+    // ── Command handlers ───────────────────────────────────────────────────────
+    void handleLemparDadu(Player& player, int d1 = -1, int d2 = -1);
+    void handleGadai(Player& player);
+    void handleTebus(Player& player);
+    void handleBangun(Player& player);
+    void handleGunakanKemampuan(Player& player);
 
 public:
-    /// @brief Creates a game engine, waiting for initiation.
     Game();
-    ~Game();
+    ~Game() override;
 
-    /// @brief Initializes a fresh game instance based on the input user configuration and settings.
-    /// @param numPlayers Total players joining the new game.
-    /// @param maxTurns Maximum turns specified in the configuration before it concludes.
-    void createGame(int numPlayers, int maxTurns);
+    void setView(GameView* gameView);
 
-    /// @brief Initializes a game state from a save file logic.
-    /// @param filename The path name to Load.
+    // ── Game lifecycle ─────────────────────────────────────────────────────────
+    void createGame();
     void loadGame(const std::string& filename);
-
-    /// @brief Saves the current logical game state to a save file logic.
-    /// @param filename The intended file save location.
     void saveGame(const std::string& filename) const;
-
-    /// @brief Progresses the game loop through player turns natively until finished.
     void runCycle();
+    void handleCommand(const std::string& input, Player& player);
 
-    /// @brief Moves the turn progression to the next active player.
-    void advanceTurn();
-
-    /// @brief Verifies whether the game should declare a state of GAMEOVER.
-    /// @return True if conditions were met, false otherwise.
     bool checkWin() const;
 
-    /// @brief Handles bankruptcy liquidations.
-    /// @param defaultingPlayer The player failing to pay their obligations.
-    /// @param creditor The player retrieving assets from bankrupt player. Bank if nullptr.
-    /// @param amountRequired The debt threshold that has been missed.
-    void triggerBankruptcy(Player* defaultingPlayer, Player* creditor, int amountRequired);
+    // ── Public accessors used by GameSaveLoader ────────────────────────────────
+    const std::vector<std::unique_ptr<Player>>& getPlayers() const;
+    const TurnManager& getTurnManager() const;
+    const std::vector<std::unique_ptr<SkillCard>>& getAllSkillCards() const;
+    GameState getState() const;
 
-    /// @brief Starts an auction event specifically for when properties are dismissed or un-bought.
-    /// @param tile The property tile pending action.
-    /// @param triggerPlayerIndex The index of the player provoking this auction round.
-    void initiateAuction(Tile* tile, int triggerPlayerIndex);
+    // ── IGameContext implementation ────────────────────────────────────────────
+    Player& getActivePlayer() override;
+    const std::vector<Player*> getAllActivePlayers() const override;
+    Board& getBoard() override;
+    const GameConfig& getConfig() const override;
+    int getCurrentTurn() const override;
+    Logger& getLogger() override;
+    int getLastDiceTotal() const override;
+
+    void movePlayerBy(Player& player, int steps) override;
+    void movePlayerTo(Player& player, int tileIndex) override;
+    void repositionPlayer(Player& player, int tileIndex) override;
+    void movePlayerToNearest(Player& player, const std::string& tileType) override;
+    void sendPlayerToJail(Player& player) override;
+
+    void grantSalary(Player& player) override;
+    void transferMoney(Player& payer, Player& collector, int amount) override;
+    void chargeToBank(Player& player, int amount) override;
+    void chargeVoluntary(Player& player, int amount) override;
+    void collectFromAll(Player& collector, int amountPerPlayer) override;
+    void payToAll(Player& payer, int amountPerPlayer) override;
+
+    void grantProperty(Player& player, PropertyTile& tile) override;
+    void initiateAuction(PropertyTile& tile) override;
+    void triggerBankruptcy(Player& debtor, Player* creditor, int amount) override;
+    void refreshMonopolyStatus() override;
+
+    bool promptBuyProperty(Player& player, PropertyTile& tile) override;
+    PropertyTile* promptSelectOpponentProperty(Player& player) override;
+    Player* promptSelectTarget(Player& player) override;
+    int promptTaxChoice(Player& player, int flat, int pct) override;
+    int promptTileIndex(Player& player) override;
+    void promptFestivalSelection(Player& player) override;
+    std::pair<bool, int> promptAuctionBid(Player& player, int currentBid,
+                                          const PropertyTile& tile) override;
+    void runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor) override;
 };
