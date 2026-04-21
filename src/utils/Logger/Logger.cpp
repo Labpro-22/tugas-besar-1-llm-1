@@ -1,6 +1,7 @@
 #include "Logger.hpp"
 #include <algorithm>
 #include <sstream>
+#include <iomanip>
 
 using namespace std;
 
@@ -10,13 +11,14 @@ LogEntry::LogEntry(int turnNumber, const string& username, const string& actionT
 
 string LogEntry::toString() const {
     ostringstream oss;
-    oss << "[Turn " << turnNumber << "] " << username << " | " << actionType << " | " << details;
+    oss << "[Turn " << turnNumber << "] " << username << " | " 
+        << left << setw(8) << actionType << " | " << details;
     return oss.str();
 }
 
 string LogEntry::toSaveString() const {
     ostringstream oss;
-    oss << turnNumber << "|" << username << "|" << actionType << "|" << details;
+    oss << turnNumber << " " << username << " " << actionType << " " << details;
     return oss.str();
 }
 

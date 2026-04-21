@@ -1,33 +1,45 @@
-#include "models/Tiles/Properties/StreetTile.hpp"
-
+#include "StreetTile.hpp"
+#include "IGameContext.hpp"
+#include "Player.hpp"
 #include <algorithm>
-#include <vector>
 
 using namespace std;
 
-StreetTile::StreetTile(const int id, const string& code, const string& name, const int price,
-                       const string& color, int mortgageValue, int housePrice, int hotelPrice,
+StreetTile::StreetTile(int id, const string& code, const string& name, int price,
+                       ColorGroup colorGroup, int mortgageValue, int housePrice, int hotelPrice,
                        const vector<int>& rentByLevel)
     : PropertyTile(id, code, name, PropertyType::STREET, price, mortgageValue, rentByLevel),
-      color(color), monopolyOwned(false), propertyLevel(0), housePrice(housePrice),
-      hotelPrice(hotelPrice), festivalMultiplier(1), festivalDur(0) {}
+      colorGroup(colorGroup),
+      monopolyOwned(false),
+      propertyLevel(0),
+      housePrice(housePrice),
+      hotelPrice(hotelPrice) {}
 
 StreetTile::~StreetTile() {}
 
-void StreetTile::landedOn(Player& player) {
+void StreetTile::landedOn(IGameContext& ctx) {
+    Player& player = ctx.getActivePlayer();
     if (isBankOwned()) {
-        // TODO: Panggil CETAK_AKTA untuk menampilkan akta kepemilikan street ini.
-        // CETAK_AKTA(*this);
-        // Tawarkan pembelian ke player, proses transaksi jika uang cukup.
-        // Jika tidak dibeli / uang tidak cukup, trigger mekanisme lelang.
-
+        int effectivePrice = getPrice();
+        if (player.hasActiveDiscount()) {
+            effectivePrice -= effectivePrice * player.getDiscountPercentage() / 100;
+        }
+        bool wantsToBuy = ctx.promptBuyProperty(player, *this);
+        if (wantsToBuy && player.getMoney() >= effectivePrice) {
+            ctx.chargeVoluntary(player, effectivePrice);
+            if (player.getStatus() != PlayerStatus::BANKRUPT) {
+                ctx.grantProperty(player, *this);
+            }
+        } else {
+            ctx.initiateAuction(*this);
+        }
         return;
     }
-    PropertyTile::landedOn(player);
+    PropertyTile::landedOn(ctx);
 }
 
-const string& StreetTile::getColor() const {
-    return color;
+ColorGroup StreetTile::getColorGroup() const {
+    return colorGroup;
 }
 
 int StreetTile::getPropertyLevel() const {
@@ -39,20 +51,20 @@ void StreetTile::setPropertyLevel(int level) {
 }
 
 bool StreetTile::buildHouse() {
-    if (propertyLevel < 0 || propertyLevel >= 4) {
-        return false;
-    }
-
+    if (propertyLevel < 0 || propertyLevel >= 4) return false;
     ++propertyLevel;
     return true;
 }
 
 bool StreetTile::buildHotel() {
-    if (propertyLevel != 4) {
-        return false;
-    }
-
+    if (propertyLevel != 4) return false;
     propertyLevel = 5;
+    return true;
+}
+
+bool StreetTile::demolish() {
+    if (propertyLevel <= 0) return false;
+    --propertyLevel;
     return true;
 }
 
@@ -64,33 +76,6 @@ int StreetTile::getHotelPrice() const {
     return hotelPrice;
 }
 
-void StreetTile::activateFestival(int multiplier, int duration) {
-    if (multiplier <= 0) {
-        multiplier = 2;
-    }
-    if (duration <= 0) {
-        duration = 3;
-    }
-
-    if (festivalMultiplier < 8) {
-        festivalMultiplier = min(8, festivalMultiplier * multiplier);
-    }
-
-    festivalDur = duration;
-}
-
-void StreetTile::tickFestival() {
-    if (festivalDur <= 0) {
-        festivalMultiplier = 1;
-        return;
-    }
-
-    --festivalDur;
-    if (festivalDur == 0) {
-        festivalMultiplier = 1;
-    }
-}
-
 bool StreetTile::isMonopolyOwned() const {
     return monopolyOwned;
 }
@@ -100,18 +85,14 @@ void StreetTile::setMonopolyOwned(bool value) {
 }
 
 int StreetTile::calculateRent(const Player& player) const {
-    if (!canCollectRentFrom(player)) {
-        return 0;
-    }
+    if (!canCollectRentFrom(player)) return 0;
 
     int rent = getRentByIndex(propertyLevel);
-    if (propertyLevel == 0 && isMonopolyOwned()) {
+    if (propertyLevel == 0 && monopolyOwned) {
         rent *= 2;
     }
-
-    if (festivalDur > 0) {
-        rent *= festivalMultiplier;
+    if (hasFestival()) {
+        rent *= getFestivalMultiplier();
     }
-
     return rent;
 }
