@@ -3,7 +3,6 @@
 #include "Board.hpp"
 #include "Player.hpp"
 #include "PropertyTile.hpp"
-#include "TransactionLogger.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -39,7 +38,8 @@ public:
     /// @brief Renders the visual representation of the game board.
     /// @param board Const reference to the board logic.
     /// @param players Const reference to the list of players on the board.
-    void printBoard(const Board& board, const std::vector<std::unique_ptr<Player>>& players) const;
+    void printBoard(const Board& board, const std::vector<std::unique_ptr<Player>>& players,
+                    int currentTurn = -1, int maxTurn = 50) const;
 
     /// @brief Renders an individual property tile detail and its ownership statuses.
     /// @param property Referencing a property tile component.
