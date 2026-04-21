@@ -1,5 +1,6 @@
 #pragma once
 
+#include <random>
 #include <string>
 #include <vector>
 
@@ -14,6 +15,9 @@ private:
 
     /// @brief Counter tracking how many consecutive times doubles have been rolled.
     int consecutiveDoubles;
+
+    std::mt19937 rng;
+    std::uniform_int_distribution<int> dist;
 
 public:
     /// @brief Creates a dice object with an initial neutral state.

@@ -1,19 +1,17 @@
 #include "Dice.hpp"
-#include <cstdlib>
-#include <ctime>
+#include <random>
 #include <stdexcept>
 
 using namespace std;
 
-Dice::Dice() : die1(0), die2(0), consecutiveDoubles(0) {
-    srand(static_cast<unsigned int>(time(nullptr)));
-}
+Dice::Dice() : die1(0), die2(0), consecutiveDoubles(0),
+    rng(std::random_device{}()), dist(1, 6) {}
 
 Dice::~Dice() {}
 
 int Dice::rollRandom() {
-    die1 = (rand() % 6) + 1;
-    die2 = (rand() % 6) + 1;
+    die1 = dist(rng);
+    die2 = dist(rng);
 
     if (isDouble()) {
         consecutiveDoubles++;
