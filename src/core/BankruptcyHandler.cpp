@@ -1,0 +1,82 @@
+
+#include "BankruptcyHandler.hpp"
+#include "IGameContext.hpp"
+#include "Player.hpp"
+#include "PropertyTile.hpp"
+#include "StreetTile.hpp"
+
+using namespace std;
+
+BankruptcyHandler::BankruptcyHandler() {}
+
+BankruptcyHandler::~BankruptcyHandler() {}
+
+void BankruptcyHandler::handle(Player& debtor, Player* creditor, int amount, IGameContext& ctx) {
+    int maxCash = computeMaxLiquidation(debtor);
+
+    if (debtor.getMoney() + maxCash >= amount) {
+        ctx.runLiquidationPanel(debtor, amount, creditor);
+        return;
+    }
+    debtor.setStatus(PlayerStatus::BANKRUPT);
+    if (creditor) {
+        transferAssetsToPlayer(debtor, *creditor, ctx);
+    } else {
+        returnAssetsToBank(debtor, ctx);
+    }
+}
+
+int BankruptcyHandler::computeMaxLiquidation(const Player& debtor) const {
+    int total = 0;
+    for (const PropertyTile* prop : debtor.getProperties()) {
+        if (prop->isMortgaged()) {
+            continue;
+        }
+
+        total += prop->getPrice();
+        const auto* street = dynamic_cast<const StreetTile*>(prop);
+        if (street) {
+            int level = street->getPropertyLevel();
+            if (level == 5) {
+                total += (street->getHotelPrice() + 4 * street->getHousePrice()) / 2;
+            } else {
+                total += level * street->getHousePrice() / 2;
+            }
+        }
+    }
+    return total;
+}
+
+void BankruptcyHandler::transferAssetsToPlayer(Player& debtor, Player& creditor,
+                                               IGameContext& ctx) {
+    const auto debtorProperties = debtor.getProperties();
+    for (PropertyTile* prop : debtorProperties) {
+        const bool wasMortgaged = prop->isMortgaged();
+        ctx.grantProperty(creditor, *prop);
+        if (wasMortgaged) {
+            prop->setStatus(PropertyStatus::MORTGAGED);
+        }
+    }
+    creditor += debtor.getMoney();
+    debtor -= debtor.getMoney();
+    ctx.refreshMonopolyStatus();
+}
+
+void BankruptcyHandler::returnAssetsToBank(Player& debtor, IGameContext& ctx) {
+    const auto debtorProperties = debtor.getProperties();
+    for (PropertyTile* prop : debtorProperties) {
+        if (auto* street = dynamic_cast<StreetTile*>(prop)) {
+            street->setPropertyLevel(0);
+        }
+        prop->setFestivalState(1, 0);
+        debtor.removeProperty(prop);
+        prop->releaseToBank();
+    }
+    ctx.refreshMonopolyStatus();
+
+    for (PropertyTile* prop : debtorProperties) {
+        ctx.initiateAuction(*prop);
+    }
+
+    debtor -= debtor.getMoney();
+}
