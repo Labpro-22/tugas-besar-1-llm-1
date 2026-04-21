@@ -26,5 +26,5 @@ public:
     /// @brief Gets the duration (in turns) of the discount effect.
     int getDuration() const;
 
-    void executeAction(Player& player) override;
+    void executeAction(IGameContext& ctx) override;
 };

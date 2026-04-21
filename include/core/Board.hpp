@@ -41,4 +41,7 @@ public:
     /// @brief Gets the index position of the Jail tile.
     /// @return The zero-based index of the jail block.
     int getJailPosition() const;
+
+    /// @brief Appends a tile to the board (used during board construction).
+    void addTile(std::unique_ptr<Tile> tile);
 };

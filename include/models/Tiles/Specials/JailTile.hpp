@@ -1,24 +1,17 @@
 #pragma once
 #include "SpecialTile.hpp"
 
-/// @brief A tile where players are placed when in jail.
+/// @brief Jail tile — visiting player is unaffected; imprisoned player must pay fine or roll double.
 class JailTile : public SpecialTile {
 private:
-    /* data */
+    int fineAmount; ///< Amount from config (special.txt → JAIL_FINE)
+
 public:
-    /// @brief Creates a jail tile with a configured release fine.
-    /// @param id The unique identifier of the tile.
-    /// @param code The unique 3-character code of the tile.
-    /// @param name The display name of the tile.
-    /// @param fineAmount The fine required for a player to leave jail.
-    JailTile(const int id, const std::string& code, const std::string& name, int fineAmount);
-    ~JailTile();
+    JailTile(int id, const std::string& code, const std::string& name, int fineAmount);
+    ~JailTile() override;
 
-    /// @brief The amount of fine a player must pay to get out of jail.
-    int fineAmount;
+    int getFineAmount() const;
+
+protected:
+    void executeAction(IGameContext& ctx) override;
 };
-
-JailTile::JailTile(const int id, const std::string& code, const std::string& name, int fineAmount)
-    : SpecialTile(id, code, name), fineAmount(fineAmount) {}
-
-JailTile::~JailTile() {}

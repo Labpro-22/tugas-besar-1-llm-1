@@ -1,28 +1,21 @@
 #pragma once
 #include "ActionTile.hpp"
 
-enum class CardType {
-    Chance,
-    CommunityChest
-};
+class ICardDeck;
 
-/// @brief A tile that allows the player to draw a card when they land on it.
+/**
+ * @brief Tile that causes the landing player to draw from a card deck.
+ * The deck is injected at construction (dependency injection), so
+ * CardTile does not depend on the concrete Game or deck type.
+ */
 class CardTile : public ActionTile {
 private:
-    /// @brief The type of card deck this tile draws from (Chance or Community Chest).
-    CardType type;
+    ICardDeck& deck; ///< Chance or Community Chest deck — injected, not owned
 
 public:
-    /// @brief Creates a card tile with a specific card deck type.
-    /// @param id The unique identifier of the tile.
-    /// @param code The unique 3-character code of the tile.
-    /// @param name The display name of the tile.
-    /// @param type The type of card deck this tile draws from.
-    CardTile(const int id, const std::string& code, const std::string& name, CardType type);
-    ~CardTile();
+    CardTile(int id, const std::string& code, const std::string& name, ICardDeck& deck);
+    ~CardTile() override;
+
+protected:
+    void executeAction(IGameContext& ctx) override;
 };
-
-CardTile::CardTile(const int id, const std::string& code, const std::string& name, CardType type)
-    : ActionTile(id, code, name), type(type) {}
-
-CardTile::~CardTile() {}

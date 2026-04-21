@@ -1,23 +1,24 @@
 #pragma once
 #include "Card.hpp"
 
-/// @brief A chance card that players can draw when they land on a Chance tile.
-class ChanceCard : public Card {
-private:
-    /* data */
-public:
-    /// @brief Creates a chance card with the given name and description.
-    /// @param name The name of the chance card.
-    /// @param description The description of the chance card's effect.
-    ChanceCard(const std::string& name, const std::string& description);
-    ~ChanceCard();
-
-    /// @brief Executes the action associated with the card.
-    /// @param player The player who drew the card.
-    void executeAction(Player& player) override;
+/// @brief Chance card effect types defined by the spec.
+enum class ChanceEffect {
+    GO_TO_NEAREST_STATION, ///< "Pergi ke stasiun terdekat."
+    MOVE_BACK_3,           ///< "Mundur 3 petak."
+    GO_TO_JAIL,            ///< "Masuk Penjara."
+    GET_OUT_OF_JAIL        ///< "Bebas dari Penjara."
 };
 
-ChanceCard::ChanceCard(const std::string& name, const std::string& description)
-    : Card(name, description) {}
+/// @brief Chance card drawn when a player lands on a Kesempatan tile.
+class ChanceCard : public Card {
+private:
+    ChanceEffect effect;
 
-ChanceCard::~ChanceCard() {}
+public:
+    ChanceCard(const std::string& name, const std::string& description, ChanceEffect effect);
+    ~ChanceCard() override;
+
+    ChanceEffect getEffect() const;
+
+    void executeAction(IGameContext& ctx) override;
+};

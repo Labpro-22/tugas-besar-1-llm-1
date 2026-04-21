@@ -1,21 +1,19 @@
 #pragma once
 #include "Loader.hpp"
-#include <PropertyTile.hpp>
+#include "PropertyTile.hpp"
+#include <memory>
+#include <vector>
 
-/// @brief Loader class responsible for loading property tile configurations from a file.
+/// @brief Loads StreetTile, RailroadTile, and UtilityTile instances from property.txt.
 class PropertyLoader : public Loader {
 private:
-    /// @brief A collection of property tile pointers loaded from the file.
     std::vector<std::unique_ptr<PropertyTile>> properties;
 
 public:
-    PropertyLoader(std::string filename);
-    ~PropertyLoader();
+    explicit PropertyLoader(const std::string& filename);
+    ~PropertyLoader() override;
 
-    /// @brief Loads property tile configurations from the specified file.
     void loadConfig() override;
 
-    /// @brief Retrieves the loaded property tiles.
-    /// @return A vector of unique pointers to the loaded property tiles.
     std::vector<std::unique_ptr<PropertyTile>>& getProperties();
 };

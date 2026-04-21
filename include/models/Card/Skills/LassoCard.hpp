@@ -7,5 +7,5 @@ public:
     LassoCard(const std::string& name, const std::string& description);
     ~LassoCard();
 
-    void executeAction(Player& player) override;
+    void executeAction(IGameContext& ctx) override;
 };

@@ -1,26 +1,17 @@
 #pragma once
 #include "PropertyTile.hpp"
 
-/// @brief A railroad tile on the board.
+/// @brief Railroad (station) tile. Acquired automatically; rent scales with total railroads owned.
 class RailroadTile : public PropertyTile {
-private:
-    /* data */
 public:
-    /// @brief Creates a railroad tile with the given identity and pricing data.
-    /// @param id The unique identifier of the tile.
-    /// @param code The unique 3-character code of the tile.
-    /// @param name The display name of the tile.
-    /// @param price The purchase price of the railroad tile.
-    RailroadTile(const int id, const std::string& code, const std::string& name, const int price);
-    ~RailroadTile();
+    RailroadTile(int id, const std::string& code, const std::string& name, int mortgageValue);
+    ~RailroadTile() override;
 
-    /// @brief Calculates the rent for the railroad tile based on the number of railroads owned.
-    /// @return The amount of rent to be paid.
+    void landedOn(IGameContext& ctx) override;
+
+    /// @brief Rent = railroadRentTable[ownedCount - 1] from GameConfig.
     int calculateRent(const Player& player) const override;
+
+    /// @brief Context-aware overload used by landedOn to access config data.
+    int calculateRent(IGameContext& ctx) const;
 };
-
-RailroadTile::RailroadTile(const int id, const std::string& code, const std::string& name,
-                           const int price)
-    : PropertyTile(id, code, name, price) {}
-
-RailroadTile::~RailroadTile() {}

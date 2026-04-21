@@ -18,5 +18,5 @@ public:
     /// @brief Gets the number of steps this move card grants.
     int getSteps() const;
 
-    void executeAction(Player& player) override;
+    void executeAction(IGameContext& ctx) override;
 };

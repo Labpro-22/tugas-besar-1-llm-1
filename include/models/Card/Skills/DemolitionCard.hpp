@@ -7,5 +7,5 @@ public:
     DemolitionCard(const std::string& name, const std::string& description);
     ~DemolitionCard();
 
-    void executeAction(Player& player) override;
+    void executeAction(IGameContext& ctx) override;
 };

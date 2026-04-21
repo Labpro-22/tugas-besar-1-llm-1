@@ -15,5 +15,5 @@ public:
     /// @brief Gets the duration (in turns) of the shield effect.
     int getDuration() const;
 
-    void executeAction(Player& player) override;
+    void executeAction(IGameContext& ctx) override;
 };

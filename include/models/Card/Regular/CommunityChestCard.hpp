@@ -21,6 +21,5 @@ public:
     /// @brief Returns the effect type of this community chest card.
     CommunityChestEffect getEffect() const;
 
-    /// @brief Executes the action associated with the card.
-    void executeAction(Player& player) override;
+    void executeAction(IGameContext& ctx) override;
 };
