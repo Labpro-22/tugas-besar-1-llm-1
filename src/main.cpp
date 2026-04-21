@@ -85,8 +85,16 @@ int main() {
         view.displayMainMenu();
 
         int choice = 0;
-        cin >> choice;
-        cin.ignore();
+        string input;
+        if (getline(cin, input)) {
+            try {
+                choice = stoi(input);
+            } catch (...) {
+                // choice remains 0, falls into invalid choice block
+            }
+        } else {
+            cin.clear();
+        }
 
         if (choice == 1) {
             // New game
