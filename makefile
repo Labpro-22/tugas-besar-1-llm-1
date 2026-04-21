@@ -2,7 +2,6 @@
 
 # Compiler settings
 CXX      := g++
-CXXFLAGS := -Wall -Wextra -std=c++17 -I include
 CLANG_FORMAT := $(shell command -v clang-format || command -v clang-format-18 || command -v clang-format-17 || command -v clang-format-16 || command -v clang-format-15 || command -v clang-format-14)
 
 # Directories
@@ -14,6 +13,11 @@ DATA_DIR    := data
 CONFIG_DIR  := config
 
 DOC_DIR     := doc
+
+# Header search paths
+INCLUDE_DIRS := $(shell find $(INCLUDE_DIR) -type d)
+CPPFLAGS := $(addprefix -I,$(INCLUDE_DIRS))
+CXXFLAGS := -Wall -Wextra -std=c++17
 
 # Target executable
 TARGET := $(BIN_DIR)/game
@@ -36,13 +40,13 @@ directories:
 
 # Link object files to create executable
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) $^ -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
 	@echo "Build successful! Executable is at $(TARGET)"
 
 # Compile source files into object files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 # Run the game
 run: all
