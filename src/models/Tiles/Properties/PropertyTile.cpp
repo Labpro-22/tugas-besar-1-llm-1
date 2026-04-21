@@ -1,5 +1,6 @@
 #include "PropertyTile.hpp"
-
+#include "IGameContext.hpp"
+#include "Player.hpp"
 #include <algorithm>
 
 using namespace std;
@@ -11,12 +12,13 @@ PropertyTile::PropertyTile(const int id, const string& code, const string& name,
 
 PropertyTile::~PropertyTile() = default;
 
-void PropertyTile::landedOn(Player& player) {
+void PropertyTile::landedOn(IGameContext& ctx) {
+    Player& player = ctx.getActivePlayer();
     if (!canCollectRentFrom(player)) {
         return;
     }
-
-    calculateRent(player);
+    int rent = calculateRent(player);
+    ctx.transferMoney(player, *owner, rent);
 }
 
 Player* PropertyTile::getOwner() const {
@@ -89,4 +91,40 @@ void PropertyTile::unmortgage() {
     if (owner != nullptr) {
         status = PropertyStatus::OWNED;
     }
+}
+
+// ── Festival ──────────────────────────────────────────────────────────────────
+
+void PropertyTile::activateFestival() {
+    if (festivalMultiplier < 8) {
+        festivalMultiplier = min(8, festivalMultiplier * 2);
+    }
+    festivalDur = 3;
+}
+
+void PropertyTile::tickFestival() {
+    if (festivalDur <= 0) {
+        festivalMultiplier = 1;
+        return;
+    }
+    if (--festivalDur == 0) {
+        festivalMultiplier = 1;
+    }
+}
+
+bool PropertyTile::hasFestival() const {
+    return festivalDur > 0;
+}
+
+int PropertyTile::getFestivalMultiplier() const {
+    return festivalMultiplier;
+}
+
+int PropertyTile::getFestivalDur() const {
+    return festivalDur;
+}
+
+void PropertyTile::setFestivalState(int multiplier, int duration) {
+    festivalMultiplier = multiplier;
+    festivalDur = duration;
 }
