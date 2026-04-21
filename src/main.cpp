@@ -1,6 +1,6 @@
+#include "Exceptions.hpp"
 #include "Game.hpp"
 #include "GameView.hpp"
-#include "Exceptions.hpp"
 #include "Player.hpp"
 #include <algorithm>
 #include <iostream>
@@ -22,10 +22,9 @@ static void runEndScreen(GameView& view, const Game& game) {
         vector<string> winners = {activePlayers.front()->getUsername()};
         vector<string> rankings;
         for (const auto& player : players) {
-            rankings.push_back(player->getUsername() + " - cash M" +
-                               to_string(player->getMoney()) + ", properti " +
-                               to_string(player->getProperties().size()) + ", kartu " +
-                               to_string(player->getHand().size()));
+            rankings.push_back(player->getUsername() + " - cash M" + to_string(player->getMoney()) +
+                               ", properti " + to_string(player->getProperties().size()) +
+                               ", kartu " + to_string(player->getHand().size()));
         }
         view.showEndGameScreen(winners, rankings);
         return;
@@ -41,18 +40,20 @@ static void runEndScreen(GameView& view, const Game& game) {
 
     vector<PlayerSummary> summaries;
     for (const auto& p : players) {
-        summaries.push_back(
-            {p->getUsername(), p->getMoney(), static_cast<int>(p->getProperties().size()),
-             static_cast<int>(p->getHand().size())});
+        summaries.push_back({p->getUsername(), p->getMoney(),
+                             static_cast<int>(p->getProperties().size()),
+                             static_cast<int>(p->getHand().size())});
     }
-    sort(summaries.begin(), summaries.end(), [](const PlayerSummary& left,
-                                                const PlayerSummary& right) {
-        if (left.cash != right.cash) return left.cash > right.cash;
-        if (left.propertyCount != right.propertyCount)
-            return left.propertyCount > right.propertyCount;
-        if (left.cardCount != right.cardCount) return left.cardCount > right.cardCount;
-        return left.username < right.username;
-    });
+    sort(summaries.begin(), summaries.end(),
+         [](const PlayerSummary& left, const PlayerSummary& right) {
+             if (left.cash != right.cash)
+                 return left.cash > right.cash;
+             if (left.propertyCount != right.propertyCount)
+                 return left.propertyCount > right.propertyCount;
+             if (left.cardCount != right.cardCount)
+                 return left.cardCount > right.cardCount;
+             return left.username < right.username;
+         });
 
     vector<string> winners;
     if (!summaries.empty()) {
@@ -110,6 +111,10 @@ int main() {
             string filename;
             cin >> filename;
             cin.ignore();
+
+            if (filename.find("data/") != 0) {
+                filename = "data/" + filename;
+            }
 
             try {
                 game.loadGame(filename);

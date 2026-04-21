@@ -105,6 +105,10 @@ void CommandHandler::dispatch(const string& input, Player& player, IGameContext&
                 string filename;
                 if (!(iss >> filename))
                     filename = "nimonspoli_save.txt";
+
+                if (filename.find("data/") != 0) {
+                    filename = "data/" + filename;
+                }
                 // Check if file already exists — spec requires overwrite prompt
                 {
                     ifstream checkFile(filename);
