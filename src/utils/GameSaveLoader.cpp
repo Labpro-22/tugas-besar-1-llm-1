@@ -1,8 +1,9 @@
 #include "GameSaveLoader.hpp"
+#include "BoardFactory.hpp"
 #include "ConfigManager.hpp"
-#include "Exceptions.hpp"
 #include "DemolitionCard.hpp"
 #include "DiscountCard.hpp"
+#include "Exceptions.hpp"
 #include "Game.hpp"
 #include "LassoCard.hpp"
 #include "MoveCard.hpp"
@@ -29,10 +30,14 @@ static string cardToToken(const SkillCard* card) {
     if (auto* d = dynamic_cast<const DiscountCard*>(card))
         return "DiscountCard " + to_string(d->getDiscountPercentage()) + " " +
                to_string(d->getDuration());
-    if (dynamic_cast<const ShieldCard*>(card)) return "ShieldCard";
-    if (dynamic_cast<const TeleportCard*>(card)) return "TeleportCard";
-    if (dynamic_cast<const LassoCard*>(card)) return "LassoCard";
-    if (dynamic_cast<const DemolitionCard*>(card)) return "DemolitionCard";
+    if (dynamic_cast<const ShieldCard*>(card))
+        return "ShieldCard";
+    if (dynamic_cast<const TeleportCard*>(card))
+        return "TeleportCard";
+    if (dynamic_cast<const LassoCard*>(card))
+        return "LassoCard";
+    if (dynamic_cast<const DemolitionCard*>(card))
+        return "DemolitionCard";
     return "UnknownCard";
 }
 
@@ -45,14 +50,18 @@ static unique_ptr<SkillCard> extractCardFromStream(istringstream& ss, const stri
     if (type == "DiscountCard") {
         int pct = 10, dur = 1;
         ss >> pct >> dur;
-        return make_unique<DiscountCard>("DiscountCard", "Diskon " + to_string(pct) + "%.", pct, dur);
+        return make_unique<DiscountCard>("DiscountCard", "Diskon " + to_string(pct) + "%.", pct,
+                                         dur);
     }
     if (type == "ShieldCard") {
         return make_unique<ShieldCard>("ShieldCard", "Kebal tagihan.", 1);
     }
-    if (type == "TeleportCard") return make_unique<TeleportCard>("TeleportCard", "Pindah ke petak manapun.");
-    if (type == "LassoCard") return make_unique<LassoCard>("LassoCard", "Tarik lawan ke posisimu.");
-    if (type == "DemolitionCard") return make_unique<DemolitionCard>("DemolitionCard", "Hancurkan bangunan lawan.");
+    if (type == "TeleportCard")
+        return make_unique<TeleportCard>("TeleportCard", "Pindah ke petak manapun.");
+    if (type == "LassoCard")
+        return make_unique<LassoCard>("LassoCard", "Tarik lawan ke posisimu.");
+    if (type == "DemolitionCard")
+        return make_unique<DemolitionCard>("DemolitionCard", "Hancurkan bangunan lawan.");
     return nullptr;
 }
 
@@ -64,7 +73,8 @@ GameSaveLoader::~GameSaveLoader() {}
 
 void GameSaveLoader::save(const Game& game, const string& filename) const {
     ofstream out(filename);
-    if (!out) throw FileException(filename, "simpan");
+    if (!out)
+        throw FileException(filename, "simpan");
 
     const TurnManager& tm = game.turnManager;
     // <TURN_SAAT_INI> <MAX_TURN> <JUMLAH_PEMAIN>
@@ -75,17 +85,25 @@ void GameSaveLoader::save(const Game& game, const string& filename) const {
     for (const auto& p : game.players) {
         string statusStr;
         switch (p->getStatus()) {
-            case PlayerStatus::ACTIVE: statusStr = "ACTIVE"; break;
-            case PlayerStatus::BANKRUPT: statusStr = "BANKRUPT"; break;
-            case PlayerStatus::JAILED: statusStr = "JAILED"; break;
+        case PlayerStatus::ACTIVE:
+            statusStr = "ACTIVE";
+            break;
+        case PlayerStatus::BANKRUPT:
+            statusStr = "BANKRUPT";
+            break;
+        case PlayerStatus::JAILED:
+            statusStr = "JAILED";
+            break;
         }
 
         string posCode = "GO";
         Tile* t = game.board->getTileAt(p->getPosition());
-        if (t) posCode = t->getCode();
+        if (t)
+            posCode = t->getCode();
 
-        out << p->getUsername() << " " << p->getMoney() << " " << posCode << " " << statusStr << " ";
-        
+        out << p->getUsername() << " " << p->getMoney() << " " << posCode << " " << statusStr
+            << " ";
+
         const auto& hand = p->getHand();
         out << hand.size();
         for (const SkillCard* card : hand) {
@@ -120,21 +138,33 @@ void GameSaveLoader::save(const Game& game, const string& filename) const {
     out << properties.size() << " ";
     for (size_t i = 0; i < properties.size(); ++i) {
         auto* prop = properties[i];
-        
+
         string typeStr;
         switch (prop->getType()) {
-            case PropertyType::STREET: typeStr = "street"; break;
-            case PropertyType::RAILROAD: typeStr = "railroad"; break;
-            case PropertyType::UTILITY: typeStr = "utility"; break;
+        case PropertyType::STREET:
+            typeStr = "street";
+            break;
+        case PropertyType::RAILROAD:
+            typeStr = "railroad";
+            break;
+        case PropertyType::UTILITY:
+            typeStr = "utility";
+            break;
         }
 
         string owner = prop->getOwner() ? prop->getOwner()->getUsername() : "BANK";
-        
+
         string propStatus;
         switch (prop->getStatus()) {
-            case PropertyStatus::BANK: propStatus = "BANK"; break;
-            case PropertyStatus::OWNED: propStatus = "OWNED"; break;
-            case PropertyStatus::MORTGAGED: propStatus = "MORTGAGED"; break;
+        case PropertyStatus::BANK:
+            propStatus = "BANK";
+            break;
+        case PropertyStatus::OWNED:
+            propStatus = "OWNED";
+            break;
+        case PropertyStatus::MORTGAGED:
+            propStatus = "MORTGAGED";
+            break;
         }
 
         int level = 0;
@@ -144,8 +174,9 @@ void GameSaveLoader::save(const Game& game, const string& filename) const {
 
         out << prop->getCode() << " " << typeStr << " " << owner << " " << propStatus << " "
             << prop->getFestivalMultiplier() << " " << prop->getFestivalDur() << " " << level;
-            
-        if (i < properties.size() - 1) out << "\n";
+
+        if (i < properties.size() - 1)
+            out << "\n";
     }
     out << "\n";
 
@@ -161,7 +192,8 @@ void GameSaveLoader::save(const Game& game, const string& filename) const {
                 break;
             }
         }
-        if (!inHand) deckCards.push_back(c.get());
+        if (!inHand)
+            deckCards.push_back(c.get());
     }
 
     out << deckCards.size();
@@ -186,22 +218,32 @@ void GameSaveLoader::save(const Game& game, const string& filename) const {
 
 void GameSaveLoader::load(Game& game, const string& filename) const {
     ifstream in(filename);
-    if (!in) throw FileException(filename, "tidak_ditemukan");
+    if (!in)
+        throw FileException(filename, "tidak_ditemukan");
 
     // Rebuild board structure first
     ConfigManager cfg("config");
     cfg.loadAll();
     game.config = cfg.getConfig();
-    game.buildBoard(cfg);
+    auto [newBoard, newChanceCards, newCommunityCards, newAllSkillCards, newChanceDeck,
+          newCommunityDeck, newSkillDeck] = BoardFactory::build(cfg);
+    game.board = move(newBoard);
+    game.chanceCards = move(newChanceCards);
+    game.communityCards = move(newCommunityCards);
+    game.allSkillCards = move(newAllSkillCards);
+    game.chanceDeck = move(newChanceDeck);
+    game.communityDeck = move(newCommunityDeck);
+    game.skillDeck = move(newSkillDeck);
 
     string line;
-    if (!getline(in, line)) throw FileException(filename, "muat");
-    
+    if (!getline(in, line))
+        throw FileException(filename, "muat");
+
     // <TURN_SAAT_INI> <MAX_TURN> <JUMLAH_PEMAIN>
     istringstream ss(line);
     int turnSaatIni, maxTurn, jumlahPemain;
     if (!(ss >> turnSaatIni >> maxTurn >> jumlahPemain)) {
-         throw FileException(filename, "format corrupt");
+        throw FileException(filename, "format corrupt");
     }
 
     game.turnManager = TurnManager(maxTurn);
@@ -210,7 +252,8 @@ void GameSaveLoader::load(Game& game, const string& filename) const {
 
     // <STATE_PEMAIN>
     for (int i = 0; i < jumlahPemain; ++i) {
-        if (!getline(in, line)) throw FileException(filename, "kurang_baris_pemain");
+        if (!getline(in, line))
+            throw FileException(filename, "kurang_baris_pemain");
         istringstream ps(line);
         string username, posCode, statusStr;
         int uang, jumlahKartu;
@@ -222,15 +265,16 @@ void GameSaveLoader::load(Game& game, const string& filename) const {
         // Find posCode tile index (or 0 if not found)
         int posIdx = 0;
         int totalTiles = game.board->getTotalTiles();
-        for(int t = 0; t < totalTiles; ++t) {
-            if(game.board->getTileAt(t)->getCode() == posCode) {
+        for (int t = 0; t < totalTiles; ++t) {
+            if (game.board->getTileAt(t)->getCode() == posCode) {
                 posIdx = t;
                 break;
             }
         }
         player->setPosition(posIdx);
 
-        if (statusStr == "BANKRUPT") player->setStatus(PlayerStatus::BANKRUPT);
+        if (statusStr == "BANKRUPT")
+            player->setStatus(PlayerStatus::BANKRUPT);
         else if (statusStr == "JAILED") {
             player->setStatus(PlayerStatus::JAILED);
             player->setJailTurns(1); // default
@@ -245,7 +289,10 @@ void GameSaveLoader::load(Game& game, const string& filename) const {
                 if (card) {
                     SkillCard* raw = card.get();
                     game.allSkillCards.push_back(move(card));
-                    try { player->addCard(raw); } catch (...) {}
+                    try {
+                        player->addCard(raw);
+                    } catch (...) {
+                    }
                 }
             }
         }
@@ -258,14 +305,17 @@ void GameSaveLoader::load(Game& game, const string& filename) const {
     }
 
     // <URUTAN_GILIRAN> <GILIRAN_AKTIF>
-    if (!getline(in, line)) throw FileException(filename, "kurang_baris_urutan");
+    if (!getline(in, line))
+        throw FileException(filename, "kurang_baris_urutan");
     istringstream ts(line);
     vector<int> order;
     vector<string> usernames;
     string token;
-    while (ts >> token) usernames.push_back(token);
-    
-    if (usernames.empty()) throw FileException(filename, "urutan_kosong");
+    while (ts >> token)
+        usernames.push_back(token);
+
+    if (usernames.empty())
+        throw FileException(filename, "urutan_kosong");
     string activeUsername = usernames.back();
     usernames.pop_back(); // Remove active username from end of list
 
@@ -283,10 +333,12 @@ void GameSaveLoader::load(Game& game, const string& filename) const {
     }
 
     // <STATE_PROPERTI>
-    if (!getline(in, line)) throw FileException(filename, "kurang_baris_properti");
+    if (!getline(in, line))
+        throw FileException(filename, "kurang_baris_properti");
     istringstream propsStream(line);
     int numProps;
-    if (!(propsStream >> numProps)) numProps = 0;
+    if (!(propsStream >> numProps))
+        numProps = 0;
 
     string code, typeStr, ownerUsername, propStatus;
     int fMult, fDur, level;
@@ -296,37 +348,63 @@ void GameSaveLoader::load(Game& game, const string& filename) const {
         auto* tile = dynamic_cast<PropertyTile*>(game.board->getTileByCode(code));
         if (tile) {
             Player* owner = nullptr;
-            for (auto& p : game.players) if (p->getUsername() == ownerUsername) { owner = p.get(); break; }
-            
-            if (propStatus == "BANK") tile->setStatus(PropertyStatus::BANK);
-            else if (propStatus == "OWNED") { tile->setStatus(PropertyStatus::OWNED); tile->setOwner(owner); }
-            else if (propStatus == "MORTGAGED") { tile->setStatus(PropertyStatus::MORTGAGED); tile->setOwner(owner); }
-            
+            for (auto& p : game.players)
+                if (p->getUsername() == ownerUsername) {
+                    owner = p.get();
+                    break;
+                }
+
+            if (propStatus == "BANK")
+                tile->setStatus(PropertyStatus::BANK);
+            else if (propStatus == "OWNED") {
+                tile->setStatus(PropertyStatus::OWNED);
+                tile->setOwner(owner);
+            } else if (propStatus == "MORTGAGED") {
+                tile->setStatus(PropertyStatus::MORTGAGED);
+                tile->setOwner(owner);
+            }
+
             tile->setFestivalState(fMult, fDur);
-            if (auto* s = dynamic_cast<StreetTile*>(tile)) s->setPropertyLevel(level);
-            
-            if (owner && propStatus != "BANK") owner->addProperty(tile);
+            if (auto* s = dynamic_cast<StreetTile*>(tile))
+                s->setPropertyLevel(level);
+
+            if (owner && propStatus != "BANK")
+                owner->addProperty(tile);
         }
     }
 
     for (int i = 1; i < numProps; ++i) {
-        if (!getline(in, line)) break;
+        if (!getline(in, line))
+            break;
         istringstream ps(line);
         if (ps >> code >> typeStr >> ownerUsername >> propStatus >> fMult >> fDur >> level) {
             auto* tile = dynamic_cast<PropertyTile*>(game.board->getTileByCode(code));
-            if (!tile) continue;
-            
-            Player* owner = nullptr;
-            for (auto& p : game.players) if (p->getUsername() == ownerUsername) { owner = p.get(); break; }
+            if (!tile)
+                continue;
 
-            if (propStatus == "BANK") tile->setStatus(PropertyStatus::BANK);
-            else if (propStatus == "OWNED") { tile->setStatus(PropertyStatus::OWNED); tile->setOwner(owner); }
-            else if (propStatus == "MORTGAGED") { tile->setStatus(PropertyStatus::MORTGAGED); tile->setOwner(owner); }
+            Player* owner = nullptr;
+            for (auto& p : game.players)
+                if (p->getUsername() == ownerUsername) {
+                    owner = p.get();
+                    break;
+                }
+
+            if (propStatus == "BANK")
+                tile->setStatus(PropertyStatus::BANK);
+            else if (propStatus == "OWNED") {
+                tile->setStatus(PropertyStatus::OWNED);
+                tile->setOwner(owner);
+            } else if (propStatus == "MORTGAGED") {
+                tile->setStatus(PropertyStatus::MORTGAGED);
+                tile->setOwner(owner);
+            }
 
             tile->setFestivalState(fMult, fDur);
-            if (auto* s = dynamic_cast<StreetTile*>(tile)) s->setPropertyLevel(level);
-            
-            if (owner && propStatus != "BANK") owner->addProperty(tile);
+            if (auto* s = dynamic_cast<StreetTile*>(tile))
+                s->setPropertyLevel(level);
+
+            if (owner && propStatus != "BANK")
+                owner->addProperty(tile);
         }
     }
 

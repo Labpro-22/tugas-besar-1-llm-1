@@ -3,12 +3,16 @@
 #include "AuctionManager.hpp"
 #include "BankruptcyHandler.hpp"
 #include "Board.hpp"
+#include "BoardFactory.hpp"
+#include "CommandHandler.hpp"
+#include "Deck.hpp"
 #include "Dice.hpp"
+#include "FinanceManager.hpp"
 #include "GameConfig.hpp"
 #include "IGameContext.hpp"
 #include "Logger.hpp"
+#include "PropertyManager.hpp"
 #include "TurnManager.hpp"
-#include "Deck.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -34,9 +38,10 @@ enum class GameState {
  * Responsibilities:
  * - Own the canonical game state (players, board, decks, config).
  * - Implement IGameContext so Tiles and Cards can trigger game events
- * without coupling to this concrete class.
+ *   without coupling to this concrete class.
  * - Delegate turn logic to TurnManager, auctions to AuctionManager,
- * and bankruptcy to BankruptcyHandler.
+ *   bankruptcy to BankruptcyHandler, finances to FinanceManager,
+ *   property commands to PropertyManager, and command parsing to CommandHandler.
  * - Delegate all I/O to GameView.
  */
 class Game : public IGameContext {
@@ -66,28 +71,24 @@ private:
     TurnManager turnManager;
     AuctionManager auctionManager;
     BankruptcyHandler bankruptcyHandler;
+    FinanceManager financeManager;
+    PropertyManager propertyManager;
+    CommandHandler commandHandler;
 
     // ── UI layer (not owned — must outlive Game) ───────────────────────────────
     GameView* view; ///< Set via setView(); game cannot run without a view
 
     // ── Board & turn helpers ───────────────────────────────────────────────────
     std::vector<Player*> getActivePlayers() const;
-    void buildBoard(ConfigManager& cfg);
     void distributeSkillCards();
     void updateMonopolyStatus();
     void resetGameData();
 
     // ── Per-turn helpers ───────────────────────────────────────────────────────
     void runTurn(Player& player);
-    bool handleJailTurn(Player& player); ///< Returns true if player exited jail via double (extra turn granted)
+    bool handleJailTurn(
+        Player& player); ///< Returns true if player exited jail via double (extra turn granted)
     void handleCardDrop(Player& player, SkillCard* newCard);
-
-    // ── Command handlers ───────────────────────────────────────────────────────
-    void handleLemparDadu(Player& player, int d1 = -1, int d2 = -1);
-    void handleGadai(Player& player);
-    void handleTebus(Player& player);
-    void handleBangun(Player& player);
-    void handleGunakanKemampuan(Player& player);
 
 public:
     Game();
