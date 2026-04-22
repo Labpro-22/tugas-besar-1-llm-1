@@ -1,4 +1,5 @@
 #include "BoardFactory.hpp"
+#include "ActionLoader.hpp"
 #include "Board.hpp"
 #include "ConfigManager.hpp"
 #include "GameConfig.hpp"
@@ -27,6 +28,7 @@
 #include <map>
 #include <memory>
 #include <random>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -111,60 +113,92 @@ BoardFactory::BuildResult BoardFactory::build(ConfigManager& cfg) {
     auto& propLoader = cfg.getPropertyLoader();
     auto& props = propLoader.getProperties();
 
-    map<int, unique_ptr<PropertyTile>> propMap;
+    map<int, unique_ptr<Tile>> tileMap;
     for (auto& p : props) {
         int pos = p->getId() - 1; // convert to 0-indexed
-        propMap[pos] = move(p);
+        if (tileMap.count(pos)) {
+            throw runtime_error("Duplicate tile id at position " + to_string(pos + 1) +
+                                " in property config");
+        }
+        tileMap[pos] = move(p);
+    }
+
+    // ── Action/special tiles from action.txt (also 1-based board positions) ──
+    auto& actionLoader = cfg.getActionLoader();
+
+    auto putTileFromDef = [&](const ActionTileEntry& def) {
+        const int id = get<0>(def);
+        const string& code = get<1>(def);
+        const string& name = get<2>(def);
+        const string& type = get<3>(def);
+
+        int pos = id - 1; // convert to 0-indexed
+        if (tileMap.count(pos)) {
+            throw runtime_error("Duplicate tile id at position " + to_string(id) +
+                                " across config files");
+        }
+
+        if (type == "KARTU") {
+            if (code == "KSP") {
+                tileMap[pos] = make_unique<CardTile>(id, code, name, *chanceDeck);
+            } else if (code == "DNU") {
+                tileMap[pos] = make_unique<CardTile>(id, code, name, *communityDeck);
+            } else {
+                throw runtime_error("Unknown card tile code: " + code);
+            }
+            return;
+        }
+
+        if (type == "PAJAK") {
+            if (code == "PPH") {
+                tileMap[pos] = make_unique<TaxTile>(id, code, name, TaxType::PPH,
+                                                    config.pphFlat, config.pphPercentage);
+            } else if (code == "PBM") {
+                tileMap[pos] =
+                    make_unique<TaxTile>(id, code, name, TaxType::PBM, config.pbmFlat);
+            } else {
+                throw runtime_error("Unknown tax tile code: " + code);
+            }
+            return;
+        }
+
+        if (type == "FESTIVAL") {
+            tileMap[pos] = make_unique<FestivalTile>(id, code, name);
+            return;
+        }
+
+        if (type == "SPESIAL") {
+            if (code == "GO") {
+                tileMap[pos] = make_unique<GoTile>(id, code, name, config.goSalary);
+            } else if (code == "PEN") {
+                tileMap[pos] = make_unique<JailTile>(id, code, name, config.jailFine);
+            } else if (code == "PPJ") {
+                tileMap[pos] = make_unique<GoToJailTile>(id, code, name);
+            } else if (code == "BBP") {
+                tileMap[pos] = make_unique<FreeTile>(id, code, name);
+            } else {
+                throw runtime_error("Unknown special tile code: " + code);
+            }
+            return;
+        }
+
+        throw runtime_error("Unknown tile type in action config: " + type);
+    };
+
+    for (const auto& def : actionLoader.getActionTiles()) {
+        putTileFromDef(def);
+    }
+    for (const auto& def : actionLoader.getSpecialTiles()) {
+        putTileFromDef(def);
     }
 
     // ── Place all 40 tiles ────────────────────────────────────────────────────
     for (int i = 0; i < 40; i++) {
-        if (propMap.count(i)) {
-            board->addTile(move(propMap[i]));
-            continue;
+        auto it = tileMap.find(i);
+        if (it == tileMap.end()) {
+            throw runtime_error("Missing tile definition for board position " + to_string(i + 1));
         }
-        switch (i) {
-        case 0:
-            board->addTile(make_unique<GoTile>(1, "GO", "Petak Mulai", config.goSalary));
-            break;
-        case 2:
-            board->addTile(make_unique<CardTile>(3, "DNU", "Dana Umum", *communityDeck));
-            break;
-        case 4:
-            board->addTile(make_unique<TaxTile>(5, "PPH", "Pajak Penghasilan", TaxType::PPH,
-                                                config.pphFlat, config.pphPercentage));
-            break;
-        case 7:
-            board->addTile(make_unique<FestivalTile>(8, "FES", "Festival"));
-            break;
-        case 10:
-            board->addTile(make_unique<JailTile>(11, "PEN", "Penjara", config.jailFine));
-            break;
-        case 17:
-            board->addTile(make_unique<CardTile>(18, "DNU", "Dana Umum", *communityDeck));
-            break;
-        case 20:
-            board->addTile(make_unique<FreeTile>(21, "BBP", "Bebas Parkir"));
-            break;
-        case 22:
-            board->addTile(make_unique<CardTile>(23, "KSP", "Kesempatan", *chanceDeck));
-            break;
-        case 30:
-            board->addTile(make_unique<GoToJailTile>(31, "PPJ", "Pergi ke Penjara"));
-            break;
-        case 33:
-            board->addTile(make_unique<FestivalTile>(34, "FES", "Festival"));
-            break;
-        case 36:
-            board->addTile(make_unique<CardTile>(37, "KSP", "Kesempatan", *chanceDeck));
-            break;
-        case 38:
-            board->addTile(make_unique<TaxTile>(39, "PBM", "Pajak Barang Mewah", TaxType::PBM,
-                                                config.pbmFlat));
-            break;
-        default:
-            break;
-        }
+        board->addTile(move(it->second));
     }
 
     return std::make_tuple(move(board), move(chanceCards), move(communityCards),

@@ -1,4 +1,5 @@
 #include "ConfigManager.hpp"
+#include "ActionLoader.hpp"
 #include "PropertyLoader.hpp"
 #include "RailroadLoader.hpp"
 #include "UtilityLoader.hpp"
@@ -37,6 +38,9 @@ void ConfigManager::loadAll() {
 
     propertyLoader = make_unique<PropertyLoader>(configDir + "/property.txt");
     propertyLoader->loadConfig();
+
+    actionLoader = make_unique<ActionLoader>(configDir + "/action.txt");
+    actionLoader->loadConfig();
 }
 
 const GameConfig& ConfigManager::getConfig() const {
@@ -45,4 +49,8 @@ const GameConfig& ConfigManager::getConfig() const {
 
 PropertyLoader& ConfigManager::getPropertyLoader() const {
     return *propertyLoader;
+}
+
+ActionLoader& ConfigManager::getActionLoader() const {
+    return *actionLoader;
 }

@@ -4,6 +4,7 @@
 #include <string>
 
 class PropertyLoader;
+class ActionLoader;
 
 /**
  * @brief Facade over all config loaders.
@@ -16,6 +17,7 @@ private:
     GameConfig config;
 
     std::unique_ptr<PropertyLoader> propertyLoader;
+    std::unique_ptr<ActionLoader> actionLoader;
 
 public:
     explicit ConfigManager(const std::string& configDir);
@@ -26,4 +28,5 @@ public:
 
     const GameConfig& getConfig() const;
     PropertyLoader& getPropertyLoader() const;
+    ActionLoader& getActionLoader() const;
 };
