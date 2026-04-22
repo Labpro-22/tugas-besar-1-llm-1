@@ -2,13 +2,12 @@
 
 #include "IUserInteraction.hpp"
 #include <memory>
-#include <memory>
 #include <string>
 #include <vector>
 
-class Board;
-class Player;
-class PropertyTile;
+#include "Board.hpp"
+#include "Player.hpp"
+#include "PropertyTile.hpp"
 
 /// @brief A terminal-based presentation layer that renders the game state and handles user inputs.
 class GameView : public IUserInteraction {
@@ -84,7 +83,7 @@ public:
     int promptTileIndex(Player& player, const Board& board) override;
     void promptFestivalSelection(Player& player) override;
     std::pair<bool, int> promptAuctionBid(Player& player, int currentBid,
-                                           const PropertyTile& tile) override;
+                                          const PropertyTile& tile) override;
     void runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor,
                              const std::vector<Player*>& players,
                              const Board& board) override;

@@ -28,6 +28,19 @@ void GameView::printEmptyLine() {
     cout << "\n";
 }
 
+string GameView::readLine() {
+    string line;
+    getline(cin, line);
+    return line;
+}
+
+int GameView::readInt() {
+    int value = 0;
+    cin >> value;
+    cin.ignore();
+    return value;
+}
+
 void GameView::clearScreen() const {
 #ifdef _WIN32
     system("cls");
@@ -465,19 +478,6 @@ string GameView::getCommandInput(const Player& activePlayer) const {
     string line;
     getline(cin, line);
     return line;
-}
-
-string GameView::readLine() {
-    string line;
-    getline(cin, line);
-    return line;
-}
-
-int GameView::readInt() {
-    int value = 0;
-    cin >> value;
-    cin.ignore();
-    return value;
 }
 
 void GameView::printTransactionLogs(const vector<string>& logs) const {
