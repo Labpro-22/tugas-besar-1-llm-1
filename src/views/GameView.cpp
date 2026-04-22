@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -16,6 +17,16 @@ using namespace std;
 GameView::GameView() {}
 
 GameView::~GameView() {}
+
+// ── Generic output ────────────────────────────────────────────────────────────
+
+void GameView::printMessage(const std::string& msg) {
+    cout << msg;
+}
+
+void GameView::printEmptyLine() {
+    cout << "\n";
+}
 
 void GameView::clearScreen() const {
 #ifdef _WIN32
@@ -36,7 +47,7 @@ void GameView::displayMainMenu() const {
     cout << "Pilih (1/2/3): ";
 }
 
-vector<string> GameView::promptPlayerSetup() const {
+vector<string> GameView::promptPlayerSetup() {
     int count = 0;
     while (true) {
         cout << "Jumlah pemain (2-4): ";
@@ -72,8 +83,8 @@ vector<string> GameView::promptPlayerSetup() const {
     return names;
 }
 
-void GameView::printBoard(const Board& board, const vector<unique_ptr<Player>>& players,
-                          int currentTurn, int maxTurn) const {
+void GameView::displayBoard(const Board& board, const vector<Player*>& players,
+                            int currentTurn, int maxTurn) const {
     int totalTiles = board.getTotalTiles();
     if (totalTiles == 0) {
         cout << "[Board kosong]\n";
@@ -202,7 +213,7 @@ void GameView::printBoard(const Board& board, const vector<unique_ptr<Player>>& 
         if (pos == jailPos) {
             // Jail: show IN:<player-ids> V:<player-ids>
             string inIds, visIds;
-            for (const auto& p : players) {
+            for (const auto* p : players) {
                 if (p->getStatus() == PlayerStatus::BANKRUPT)
                     continue;
                 if (p->getPosition() != jailPos)
@@ -233,7 +244,7 @@ void GameView::printBoard(const Board& board, const vector<unique_ptr<Player>>& 
                 }
             }
             // Player bidak markers
-            for (const auto& p : players) {
+            for (const auto* p : players) {
                 if (p->getStatus() == PlayerStatus::BANKRUPT)
                     continue;
                 if (p->getPosition() != pos)
@@ -268,58 +279,34 @@ void GameView::printBoard(const Board& board, const vector<unique_ptr<Player>>& 
     string turnStr =
         currentTurn >= 0 ? "TURN " + to_string(currentTurn) + " / " + to_string(maxTurn) : "";
 
-    // Map: interior index layout
-    // Row 1: content[0], content[1]     → L1, L2
-    //         separator[0]               → sep between row 1-2
-    // Row 2: content[2], content[3]     → L1, L2
-    //         separator[1]               → sep between row 2-3
-    // ...etc
-
     // Content lines (indices 0..17 → 9 rows × 2 lines)
-    // c[0],c[1] = Row1 (SBY/BDG): empty
     interior[0] = pad("", INNER_W);
     interior[1] = pad("", INNER_W);
-    // c[2],c[3] = Row2 (SMG/DEN): NIMONSPOLI box top + title
     interior[2] = centerStr(titleBox, INNER_W);
     interior[3] = centerStr(titleTxt, INNER_W);
-    // c[4],c[5] = Row3 (DNU/FES): empty + TURN
     interior[4] = pad("", INNER_W);
     interior[5] = centerStr(turnStr, INNER_W);
-    // c[6],c[7] = Row4 (MAL/MTR): empty + separator
     interior[6] = pad("", INNER_W);
     interior[7] = centerStr(divider, INNER_W);
-    // c[8],c[9] = Row5 (STB/GUB): P1-P4 + ^
     interior[8] = centerStr("P1-P4 : Properti milik Pemain 1-4", INNER_W);
     interior[9] = centerStr("^     : Rumah Level 1", INNER_W);
-    // c[10],c[11] = Row6 (YOG/KSP): ^^^ + *
     interior[10] = centerStr("^^^   : Rumah Level 3", INNER_W);
     interior[11] = centerStr("* : Hotel (Maksimal)", INNER_W);
-    // c[12],c[13] = Row7 (SOL/JKT): separator + KODE WARNA
     interior[12] = centerStr(divider, INNER_W);
     interior[13] = centerStr("KODE WARNA:", INNER_W);
-    // c[14],c[15] = Row8 (PLN/PBM): [BM]+[KN] + [PK]+[HJ]
     interior[14] = centerStr("[BM]=Biru Muda [KN]=Kuning", INNER_W);
     interior[15] = centerStr("[PK]=Pink      [HJ]=Hijau", INNER_W);
-    // c[16],c[17] = Row9 (MGL/IKN): [DF]+[AB] + empty
     interior[16] = centerStr("[DF]=Aksi      [AB]=Utility", INNER_W);
     interior[17] = pad("", INNER_W);
 
     // Separator lines between interior rows (indices 18..25 → 8 separators)
-    // sep[18] = between row1-2: empty
     interior[18] = pad("", INNER_W);
-    // sep[19] = between row2-3: NIMONSPOLI box bottom
     interior[19] = centerStr(titleBox, INNER_W);
-    // sep[20] = between row3-4: empty
     interior[20] = pad("", INNER_W);
-    // sep[21] = between row4-5: LEGENDA heading
     interior[21] = centerStr("LEGENDA KEPEMILIKAN & STATUS", INNER_W);
-    // sep[22] = between row5-6: ^^
     interior[22] = centerStr("^^    : Rumah Level 2", INNER_W);
-    // sep[23] = between row6-7: (1)-(4)
     interior[23] = centerStr("(1)-(4): Bidak (IN=Tahanan, V=Mampir)", INNER_W);
-    // sep[24] = between row7-8: [CK]+[MR]
     interior[24] = centerStr("[CK]=Coklat    [MR]=Merah", INNER_W);
-    // sep[25] = between row8-9: [OR]+[BT]
     interior[25] = centerStr("[OR]=Orange    [BT]=Biru Tua", INNER_W);
 
     // ── Render board ────────────────────────────────────────────────────────────
@@ -370,7 +357,7 @@ void GameView::printBoard(const Board& board, const vector<unique_ptr<Player>>& 
 
     // ── Player info ─────────────────────────────────────────────────────────────
     cout << "\nPEMAIN: ";
-    for (const auto& p : players) {
+    for (const auto* p : players) {
         if (p->getStatus() != PlayerStatus::BANKRUPT) {
             cout << "P" << (p->getId() + 1) << "=" << p->getUsername() << "(M" << p->getMoney()
                  << ",pos" << p->getPosition() << ")  ";
@@ -379,7 +366,7 @@ void GameView::printBoard(const Board& board, const vector<unique_ptr<Player>>& 
     cout << "\n\n";
 }
 
-void GameView::printPropertyDeed(const PropertyTile& property) const {
+void GameView::printPropertyDeed(const PropertyTile& property) {
     cout << "========================================\n";
     cout << "AKTA: " << property.getName() << " [" << property.getCode() << "]\n";
     cout << "Tipe: ";
@@ -441,7 +428,7 @@ void GameView::printPropertyDeed(const PropertyTile& property) const {
     cout << "========================================\n";
 }
 
-void GameView::printPlayerProperties(const Player& player) const {
+void GameView::printPlayerProperties(const Player& player) {
     const auto& props = player.getProperties();
     if (props.empty()) {
         cout << player.getUsername() << " tidak memiliki properti.\n";
@@ -480,6 +467,19 @@ string GameView::getCommandInput(const Player& activePlayer) const {
     return line;
 }
 
+string GameView::readLine() {
+    string line;
+    getline(cin, line);
+    return line;
+}
+
+int GameView::readInt() {
+    int value = 0;
+    cin >> value;
+    cin.ignore();
+    return value;
+}
+
 void GameView::printTransactionLogs(const vector<string>& logs) const {
     if (logs.empty()) {
         cout << "(Log kosong)\n";
@@ -504,4 +504,298 @@ void GameView::showEndGameScreen(const vector<string>& winners,
     for (const string& r : finalRankings)
         cout << "  " << r << "\n";
     cout << "============================================\n";
+}
+
+// ── Prompts (moved from Game.cpp) ─────────────────────────────────────────────
+
+bool GameView::promptBuyProperty(Player& player, PropertyTile& tile) {
+    cout << "\nKamu mendarat di " << tile.getName() << " (" << tile.getCode() << ")!\n";
+    printPropertyDeed(tile);
+    cout << "Uang kamu saat ini: M" << player.getMoney() << "\n";
+    cout << "Apakah kamu ingin membeli properti ini seharga M" << tile.getPrice() << "? (y/n): ";
+    char c;
+    cin >> c;
+    cin.ignore();
+    return (c == 'y' || c == 'Y');
+}
+
+PropertyTile* GameView::promptSelectOpponentProperty(Player& player,
+                                                      const vector<Player*>& players,
+                                                      const Board& board) {
+    (void)board;
+    vector<pair<Player*, PropertyTile*>> opts;
+    for (auto* p : players) {
+        if (p == &player || p->getStatus() == PlayerStatus::BANKRUPT)
+            continue;
+        for (PropertyTile* prop : p->getProperties()) {
+            auto* s = dynamic_cast<StreetTile*>(prop);
+            if (s && s->getPropertyLevel() > 0)
+                opts.push_back({p, prop});
+        }
+    }
+    if (opts.empty()) {
+        cout << "Tidak ada properti lawan yang memiliki bangunan.\n";
+        return nullptr;
+    }
+    cout << "=== Pilih Properti Lawan untuk Dihancurkan ===\n";
+    for (int i = 0; i < static_cast<int>(opts.size()); i++) {
+        auto* s = dynamic_cast<StreetTile*>(opts[i].second);
+        int lvl = s ? s->getPropertyLevel() : 0;
+        string lvlStr = (lvl == 5) ? "Hotel" : to_string(lvl) + " rumah";
+        cout << (i + 1) << ". " << opts[i].second->getName() << " (" << opts[i].second->getCode()
+             << ") milik " << opts[i].first->getUsername() << " - " << lvlStr << "\n";
+    }
+    cout << "0. Batal\nPilih: ";
+    int c = 0;
+    cin >> c;
+    cin.ignore();
+    if (c < 1 || c > static_cast<int>(opts.size()))
+        return nullptr;
+    return opts[c - 1].second;
+}
+
+Player* GameView::promptSelectTarget(Player& player, const vector<Player*>& players,
+                                     const Board& board) {
+    const int boardSize = board.getTotalTiles();
+    const int myPos = player.getPosition();
+    vector<Player*> targets;
+    for (auto* p : players) {
+        if (p == &player || p->getStatus() == PlayerStatus::BANKRUPT)
+            continue;
+        int dist = (p->getPosition() - myPos + boardSize) % boardSize;
+        if (dist == 0)
+            continue;
+        targets.push_back(p);
+    }
+    if (targets.empty()) {
+        cout << "Tidak ada pemain lawan yang berada di depan posisi kamu.\n";
+        return nullptr;
+    }
+    cout << "=== Pilih Target Pemain (di depan posisi kamu) ===\n";
+    for (int i = 0; i < static_cast<int>(targets.size()); i++) {
+        cout << (i + 1) << ". " << targets[i]->getUsername() << " (posisi "
+             << targets[i]->getPosition() << ")\n";
+    }
+    cout << "0. Batal\nPilih: ";
+    int c = 0;
+    cin >> c;
+    cin.ignore();
+    if (c < 1 || c > static_cast<int>(targets.size()))
+        return nullptr;
+    return targets[c - 1];
+}
+
+int GameView::promptTaxChoice(Player& player, int flat, int pct) {
+    cout << "\nKamu mendarat di Pajak Penghasilan (PPH)!\n";
+    cout << "Pilih opsi pembayaran pajak:\n";
+    cout << "1. Bayar flat M" << flat << "\n";
+    cout << "2. Bayar " << pct << "% dari total kekayaan\n";
+    cout << "Pilihan (1/2): ";
+    int choice = 1;
+    cin >> choice;
+    cin.ignore();
+    if (choice == 2) {
+        int totalWealth = player.getTotalWealth();
+        int percentageAmount = totalWealth * pct / 100;
+        cout << "Total kekayaan kamu:\n";
+        cout << "  Uang tunai          : M" << player.getMoney() << "\n";
+        cout << "  Harga beli properti : M" << player.getPropertyValue() << "\n";
+        cout << "  Total               : M" << totalWealth << "\n";
+        cout << "Pajak " << pct << "%             : M" << percentageAmount << "\n";
+    }
+    return (choice == 2) ? 2 : 1;
+}
+
+int GameView::promptTileIndex(Player& player, const Board& board) {
+    (void)player;
+    cout << "=== Pilih Petak Tujuan (TeleportCard) ===\n";
+    for (int i = 0; i < board.getTotalTiles(); i++) {
+        Tile* t = board.getTileAt(i);
+        if (t)
+            cout << i << ". " << t->getCode() << " - " << t->getName() << "\n";
+    }
+    cout << "Masukkan nomor petak (0-" << (board.getTotalTiles() - 1) << "): ";
+    int idx = 0;
+    cin >> idx;
+    cin.ignore();
+    if (idx < 0 || idx >= board.getTotalTiles())
+        idx = 0;
+    return idx;
+}
+
+void GameView::promptFestivalSelection(Player& player) {
+    const auto& props = player.getProperties();
+    if (props.empty()) {
+        cout << "Kamu tidak memiliki properti yang dapat dipilih.\n";
+        return;
+    }
+    cout << "\nKamu mendarat di petak Festival!\n";
+    cout << "Daftar properti milikmu:\n";
+    for (int i = 0; i < static_cast<int>(props.size()); i++) {
+        auto* p = props[i];
+        string festInfo = "";
+        if (p->hasFestival()) {
+            festInfo = " [Festival aktif x" + to_string(p->getFestivalMultiplier()) + ", sisa " +
+                       to_string(p->getFestivalDur()) + " giliran]";
+        }
+        cout << (i + 1) << ". " << p->getName() << " (" << p->getCode() << ")" << festInfo << "\n";
+    }
+    cout << "Masukkan nomor properti (0 untuk skip): ";
+    int choice = 0;
+    cin >> choice;
+    cin.ignore();
+    if (choice < 1 || choice > static_cast<int>(props.size())) {
+        cout << "Efek festival tidak diterapkan.\n";
+        return;
+    }
+    PropertyTile* selected = props[choice - 1];
+    int oldMult = selected->getFestivalMultiplier();
+    selected->activateFestival();
+    int newMult = selected->getFestivalMultiplier();
+
+    if (newMult > oldMult) {
+        cout << "Efek festival aktif! Sewa " << selected->getName() << ": x" << oldMult << " -> x"
+             << newMult << ". Durasi: 3 giliran.\n";
+    } else {
+        cout << "Efek sudah maksimum (harga sewa sudah digandakan tiga kali). "
+                "Durasi di-reset menjadi 3 giliran.\n";
+    }
+}
+
+pair<bool, int> GameView::promptAuctionBid(Player& player, int currentBid,
+                                            const PropertyTile& tile) {
+    while (true) {
+        cout << "Giliran: " << player.getUsername() << "\n";
+        cout << "Aksi (PASS / BID <jumlah>) > ";
+        string line;
+        getline(cin, line);
+        istringstream iss(line);
+        string cmd;
+        iss >> cmd;
+        transform(cmd.begin(), cmd.end(), cmd.begin(), ::toupper);
+        if (cmd == "BID") {
+            int amount = 0;
+            if (iss >> amount && amount > currentBid && amount <= player.getMoney()) {
+                return {true, amount};
+            }
+            if (amount <= currentBid)
+                cout << "Penawaran harus lebih tinggi dari M" << currentBid << ".\n";
+            else
+                cout << "Uang kamu tidak cukup (M" << player.getMoney() << ").\n";
+            // Re-prompt on invalid bid
+            continue;
+        }
+        if (cmd == "PASS") {
+            return {false, 0};
+        }
+        cout << "Perintah tidak valid. Gunakan PASS atau BID <jumlah>.\n";
+    }
+}
+
+void GameView::runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor,
+                                    const vector<Player*>& players, const Board& board) {
+    (void)players;
+    (void)board;
+    cout << "\nKamu tidak dapat membayar M" << amountNeeded << "!\n";
+    cout << "Uang kamu       : M" << debtor.getMoney() << "\n";
+    cout << "Total kewajiban : M" << amountNeeded << "\n";
+    cout << "Kekurangan      : M" << (amountNeeded - debtor.getMoney()) << "\n";
+    cout << "\nDana likuidasi dapat menutup kewajiban. Kamu wajib melikuidasi aset.\n";
+
+    while (debtor.getMoney() < amountNeeded) {
+        cout << "\n=== Panel Likuidasi ===\n";
+        cout << "Uang kamu saat ini: M" << debtor.getMoney() << "  |  Kewajiban: M" << amountNeeded
+             << "\n";
+
+        vector<PropertyTile*> sellable, mortgageable;
+        for (auto* prop : debtor.getProperties()) {
+            if (prop->isMortgaged())
+                continue;
+            sellable.push_back(prop);
+        }
+        for (auto* prop : debtor.getProperties()) {
+            if (prop->getStatus() == PropertyStatus::OWNED)
+                mortgageable.push_back(prop);
+        }
+
+        if (sellable.empty() && mortgageable.empty()) {
+            cout << "Tidak ada aset yang dapat dilikuidasi.\n";
+            break;
+        }
+
+        cout << "[Jual ke Bank]\n";
+        for (int i = 0; i < static_cast<int>(sellable.size()); i++) {
+            auto* s = dynamic_cast<StreetTile*>(sellable[i]);
+            int sellVal = sellable[i]->getPrice();
+            if (s) {
+                int lvl = s->getPropertyLevel();
+                if (lvl == 5) {
+                    sellVal += (s->getHotelPrice() + 4 * s->getHousePrice()) / 2;
+                } else {
+                    sellVal += lvl * s->getHousePrice() / 2;
+                }
+            }
+            cout << (i + 1) << ". " << sellable[i]->getName() << " (" << sellable[i]->getCode()
+                 << ")  Harga Jual: M" << sellVal << "\n";
+        }
+        cout << "[Gadaikan]\n";
+        for (int i = 0; i < static_cast<int>(mortgageable.size()); i++) {
+            cout << (static_cast<int>(sellable.size()) + i + 1) << ". "
+                 << mortgageable[i]->getName() << " (" << mortgageable[i]->getCode()
+                 << ")  Nilai Gadai: M" << mortgageable[i]->getMortgageValue() << "\n";
+        }
+        cout << "Pilih aksi (0 jika sudah cukup): ";
+
+        int choice = 0;
+        cin >> choice;
+        cin.ignore();
+
+        if (choice == 0) {
+            cout << "Kamu belum boleh keluar dari panel likuidasi sebelum kewajiban terpenuhi.\n";
+            continue;
+        }
+
+        if (choice >= 1 && choice <= static_cast<int>(sellable.size())) {
+            auto* prop = sellable[choice - 1];
+            auto* s = dynamic_cast<StreetTile*>(prop);
+            int sellVal = prop->getPrice();
+            if (s) {
+                int lvl = s->getPropertyLevel();
+                if (lvl == 5) {
+                    sellVal += (s->getHotelPrice() + 4 * s->getHousePrice()) / 2;
+                } else {
+                    sellVal += lvl * s->getHousePrice() / 2;
+                }
+                s->setPropertyLevel(0);
+            }
+            debtor.removeProperty(prop);
+            prop->releaseToBank();
+            debtor += sellVal;
+            cout << prop->getName() << " terjual ke Bank. Kamu menerima M" << sellVal << ".\n";
+        } else {
+            int mIdx = choice - static_cast<int>(sellable.size()) - 1;
+            if (mIdx >= 0 && mIdx < static_cast<int>(mortgageable.size())) {
+                auto* prop = mortgageable[mIdx];
+                prop->mortgage();
+                debtor += prop->getMortgageValue();
+                cout << prop->getName() << " digadaikan. Kamu menerima M"
+                     << prop->getMortgageValue() << ".\n";
+            }
+        }
+    }
+
+    // Execute payment
+    if (debtor.getMoney() >= amountNeeded) {
+        debtor -= amountNeeded;
+        if (creditor) {
+            *creditor += amountNeeded;
+            cout << "Kewajiban M" << amountNeeded << " terpenuhi. Membayar ke "
+                 << creditor->getUsername() << "...\n";
+            cout << "Uang " << debtor.getUsername() << ": M" << debtor.getMoney() << "\n";
+            cout << "Uang " << creditor->getUsername() << ": M" << creditor->getMoney() << "\n";
+        } else {
+            cout << "Kewajiban M" << amountNeeded << " terpenuhi. Membayar ke Bank...\n";
+        }
+        return;
+    }
 }

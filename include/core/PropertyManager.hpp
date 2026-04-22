@@ -7,6 +7,7 @@ class Board;
 class Logger;
 class PropertyTile;
 class StreetTile;
+class IUserInteraction;
 
 /**
  * @brief Handles property management commands: mortgage (gadai), redeem (tebus),
@@ -21,11 +22,13 @@ public:
     ~PropertyManager() = default;
 
     /** Mortgage a property (GADAI command). */
-    void mortgage(Player& player, Board& board, int currentTurn, Logger& logger);
+    void mortgage(Player& player, Board& board, int currentTurn, Logger& logger,
+                  IUserInteraction* ui);
 
     /** Redeem a mortgaged property (TEBUS command). */
-    void redeem(Player& player, int currentTurn, Logger& logger);
+    void redeem(Player& player, int currentTurn, Logger& logger, IUserInteraction* ui);
 
     /** Build houses/hotels on a monopolized color group (BANGUN command). */
-    void build(Player& player, Board& board, int currentTurn, Logger& logger);
+    void build(Player& player, Board& board, int currentTurn, Logger& logger,
+               IUserInteraction* ui);
 };

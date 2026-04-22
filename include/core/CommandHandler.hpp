@@ -9,7 +9,7 @@ class Player;
 class Board;
 class Dice;
 class Logger;
-class GameView;
+class IUserInteraction;
 class IGameContext;
 class PropertyManager;
 class PropertyTile;
@@ -36,7 +36,7 @@ public:
      * @param board Board reference for display and queries.
      * @param dice Dice reference for rolling.
      * @param skillDeck Skill card deck for discarding used cards.
-     * @param view GameView for display commands.
+     * @param ui IUserInteraction for display and input commands.
      * @param logger Logger for logging events.
      * @param lastDiceTotal Reference to the last dice total (updated on roll).
      * @param saveCallback Callback to invoke for the SIMPAN command (takes filename).
@@ -45,16 +45,16 @@ public:
 
     void dispatch(const std::string& input, Player& player, IGameContext& ctx,
                   PropertyManager& propMgr, Board& board, Dice& dice,
-                  CardDeck<SkillCard>* skillDeck, GameView* view, Logger& logger,
+                  CardDeck<SkillCard>* skillDeck, IUserInteraction* ui, Logger& logger,
                   int& lastDiceTotal, SaveCallback saveCallback,
                   const std::vector<std::unique_ptr<Player>>& players);
 
 private:
     /** Handle LEMPAR_DADU / ATUR_DADU commands. */
     void handleLemparDadu(Player& player, Dice& dice, IGameContext& ctx, Logger& logger,
-                          int& lastDiceTotal, int d1 = -1, int d2 = -1);
+                          int& lastDiceTotal, IUserInteraction* ui, int d1 = -1, int d2 = -1);
 
     /** Handle GUNAKAN_KEMAMPUAN command. */
     void handleGunakanKemampuan(Player& player, IGameContext& ctx, CardDeck<SkillCard>* skillDeck,
-                                Logger& logger);
+                                Logger& logger, IUserInteraction* ui);
 };

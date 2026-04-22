@@ -79,7 +79,7 @@ static void runEndScreen(GameView& view, const Game& game) {
 int main() {
     GameView view;
     Game game;
-    game.setView(&view);
+    game.setUserInteraction(&view);
 
     while (true) {
         view.displayMainMenu();

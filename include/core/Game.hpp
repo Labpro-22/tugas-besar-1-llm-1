@@ -13,6 +13,7 @@
 #include "Logger.hpp"
 #include "PropertyManager.hpp"
 #include "TurnManager.hpp"
+#include "IUserInteraction.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -76,7 +77,7 @@ private:
     CommandHandler commandHandler;
 
     // ── UI layer (not owned — must outlive Game) ───────────────────────────────
-    GameView* view; ///< Set via setView(); game cannot run without a view
+    IUserInteraction* ui; ///< Set via setUserInteraction(); game cannot run without a UI
 
     // ── Board & turn helpers ───────────────────────────────────────────────────
     std::vector<Player*> getActivePlayers() const;
@@ -94,7 +95,7 @@ public:
     Game();
     ~Game() override;
 
-    void setView(GameView* gameView);
+    void setUserInteraction(IUserInteraction* userInteraction);
 
     // ── Game lifecycle ─────────────────────────────────────────────────────────
     void createGame();

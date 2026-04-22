@@ -10,7 +10,7 @@
 #include "Exceptions.hpp"
 #include "FinanceManager.hpp"
 #include "GameSaveLoader.hpp"
-#include "GameView.hpp"
+#include "IUserInteraction.hpp"
 #include "Player.hpp"
 #include "PropertyManager.hpp"
 #include "PropertyTile.hpp"
@@ -20,21 +20,20 @@
 #include "Tile.hpp"
 #include "UtilityTile.hpp"
 #include <algorithm>
-#include <iostream>
 #include <sstream>
 #include <string>
 
 using namespace std;
 
-Game::Game() : state(GameState::MENU), lastDiceTotal(0), turnManager(0), view(nullptr) {
+Game::Game() : state(GameState::MENU), lastDiceTotal(0), turnManager(0), ui(nullptr) {
     dice = make_unique<Dice>();
     board = make_unique<Board>();
 }
 
 Game::~Game() = default;
 
-void Game::setView(GameView* gameView) {
-    view = gameView;
+void Game::setUserInteraction(IUserInteraction* userInteraction) {
+    ui = userInteraction;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -129,7 +128,7 @@ void Game::createGame() {
     communityDeck = move(newCommunityDeck);
     skillDeck = move(newSkillDeck);
 
-    vector<string> names = view->promptPlayerSetup();
+    vector<string> names = ui->promptPlayerSetup();
     for (int i = 0; i < static_cast<int>(names.size()); ++i) {
         players.push_back(make_unique<Player>(i, names[i]));
         *players.back() += config.startingBalance;
@@ -209,9 +208,9 @@ void Game::runTurn(Player& player) {
         while (!player.getHasRolledDice()) {
             if (player.isInJail())
                 return;
-            if (!view)
+            if (!ui)
                 return;
-            string input = view->getCommandInput(player);
+            string input = ui->getCommandInput(player);
             handleCommand(input, player);
         }
         return;
@@ -226,9 +225,9 @@ void Game::runTurn(Player& player) {
         while (!player.getHasRolledDice()) {
             if (player.isInJail())
                 return;
-            if (!view)
+            if (!ui)
                 return;
-            string input = view->getCommandInput(player);
+            string input = ui->getCommandInput(player);
             handleCommand(input, player);
         }
 
@@ -237,26 +236,26 @@ void Game::runTurn(Player& player) {
 
         if (dice->isDouble()) {
             extraTurn = true;
-            cout << "Double! " << player.getUsername() << " mendapat giliran tambahan.\n";
+            ui->printMessage("Double! " + player.getUsername() + " mendapat giliran tambahan.\n");
         }
     } while (extraTurn);
 }
 
 bool Game::handleJailTurn(Player& player) {
-    cout << "\n=== " << player.getUsername() << " berada di Penjara ===\n";
+    ui->printMessage("\n=== " + player.getUsername() + " berada di Penjara ===\n");
     int jailTurns = player.getJailTurns();
-    cout << "Giliran penjara ke-" << (jailTurns + 1) << "\n";
+    ui->printMessage("Giliran penjara ke-" + to_string(jailTurns + 1) + "\n");
 
     // Turn 4 (jailTurns == 3): forced payment
     if (jailTurns >= 3) {
-        cout << "Giliran ke-4 di penjara. Wajib membayar denda M" << config.jailFine << ".\n";
+        ui->printMessage("Giliran ke-4 di penjara. Wajib membayar denda M" + to_string(config.jailFine) + ".\n");
         chargeVoluntary(player, config.jailFine);
         player.releaseFromJail();
-        cout << player.getUsername() << " keluar dari penjara.\n";
+        ui->printMessage(player.getUsername() + " keluar dari penjara.\n");
         // Take regular roll
         lastDiceTotal = dice->rollRandom();
         auto dv = dice->getDiceValues();
-        cout << "Dadu: " << dv.first << " + " << dv.second << " = " << lastDiceTotal << "\n";
+        ui->printMessage("Dadu: " + to_string(dv.first) + " + " + to_string(dv.second) + " = " + to_string(lastDiceTotal) + "\n");
         logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "DADU",
                         "Lempar: " + to_string(dv.first) + "+" + to_string(dv.second) + "=" +
                             to_string(lastDiceTotal) + " (keluar penjara, bayar denda)");
@@ -264,46 +263,45 @@ bool Game::handleJailTurn(Player& player) {
         return false;
     }
 
-    cout << "Opsi keluar dari penjara:\n";
-    cout << "1. BAYAR - bayar denda M" << config.jailFine << "\n";
-    cout << "2. LEMPAR - coba lempar double\n";
+    ui->printMessage("Opsi keluar dari penjara:\n");
+    ui->printMessage("1. BAYAR - bayar denda M" + to_string(config.jailFine) + "\n");
+    ui->printMessage("2. LEMPAR - coba lempar double\n");
     if (player.hasJailFreeCard()) {
-        cout << "3. KARTU - gunakan kartu Bebas dari Penjara\n";
+        ui->printMessage("3. KARTU - gunakan kartu Bebas dari Penjara\n");
     }
-    cout << "Pilih (BAYAR/LEMPAR" << (player.hasJailFreeCard() ? "/KARTU" : "") << "): ";
+    ui->printMessage("Pilih (BAYAR/LEMPAR" + string(player.hasJailFreeCard() ? "/KARTU" : "") + "): ");
 
-    string choice;
-    getline(cin, choice);
+    string choice = ui->readLine();
     transform(choice.begin(), choice.end(), choice.begin(), ::toupper);
 
     if (choice == "KARTU" || choice == "3") {
         if (!player.hasJailFreeCard()) {
-            cout << "Kamu tidak memiliki kartu Bebas dari Penjara.\n";
+            ui->printMessage("Kamu tidak memiliki kartu Bebas dari Penjara.\n");
             player.incrementJailTurns();
             return false;
         }
         player.useJailFreeCard();
         player.releaseFromJail();
-        cout << player.getUsername()
-             << " menggunakan kartu Bebas dari Penjara dan keluar dari penjara!\n";
+        ui->printMessage(player.getUsername() +
+             " menggunakan kartu Bebas dari Penjara dan keluar dari penjara!\n");
         logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "PENJARA",
                         "Keluar penjara via kartu Bebas dari Penjara");
         lastDiceTotal = dice->rollRandom();
         auto dv = dice->getDiceValues();
-        cout << "Dadu: " << dv.first << " + " << dv.second << " = " << lastDiceTotal << "\n";
+        ui->printMessage("Dadu: " + to_string(dv.first) + " + " + to_string(dv.second) + " = " + to_string(lastDiceTotal) + "\n");
         movePlayerBy(player, lastDiceTotal);
         return false;
     } else if (choice == "BAYAR" || choice == "1") {
         chargeVoluntary(player, config.jailFine);
         if (player.getStatus() == PlayerStatus::ACTIVE) {
             player.releaseFromJail();
-            cout << player.getUsername() << " membayar M" << config.jailFine
-                 << " dan keluar dari penjara.\n";
+            ui->printMessage(player.getUsername() + " membayar M" + to_string(config.jailFine) +
+                 " dan keluar dari penjara.\n");
             logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "PENJARA",
                             "Bayar denda M" + to_string(config.jailFine) + " dan keluar penjara");
             lastDiceTotal = dice->rollRandom();
             auto dv = dice->getDiceValues();
-            cout << "Dadu: " << dv.first << " + " << dv.second << " = " << lastDiceTotal << "\n";
+            ui->printMessage("Dadu: " + to_string(dv.first) + " + " + to_string(dv.second) + " = " + to_string(lastDiceTotal) + "\n");
             movePlayerBy(player, lastDiceTotal);
         }
         return false;
@@ -312,20 +310,20 @@ bool Game::handleJailTurn(Player& player) {
         dice->resetDoublesCount();
         lastDiceTotal = dice->rollRandom();
         auto dv = dice->getDiceValues();
-        cout << "Dadu: " << dv.first << " + " << dv.second << " = " << lastDiceTotal << "\n";
+        ui->printMessage("Dadu: " + to_string(dv.first) + " + " + to_string(dv.second) + " = " + to_string(lastDiceTotal) + "\n");
         logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "DADU",
                         "Lempar di penjara: " + to_string(dv.first) + "+" + to_string(dv.second) +
                             "=" + to_string(lastDiceTotal));
 
         if (dice->isDouble()) {
-            cout << "Double! " << player.getUsername() << " keluar dari penjara.\n";
+            ui->printMessage("Double! " + player.getUsername() + " keluar dari penjara.\n");
             player.releaseFromJail();
             logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "PENJARA",
                             "Keluar penjara via double");
             movePlayerBy(player, lastDiceTotal);
             return true;
         } else {
-            cout << "Tidak double. " << player.getUsername() << " tetap di penjara.\n";
+            ui->printMessage("Tidak double. " + player.getUsername() + " tetap di penjara.\n");
             player.incrementJailTurns();
             return false;
         }
@@ -335,43 +333,41 @@ bool Game::handleJailTurn(Player& player) {
 void Game::handleCardDrop(Player& player, SkillCard* newCard) {
     if (!newCard)
         return;
-    cout << "\nKamu mendapatkan 1 kartu acak baru!\n";
-    cout << "Kartu yang didapat: " << newCard->getName() << " - " << newCard->getDescription()
-         << "\n";
+    ui->printMessage("\nKamu mendapatkan 1 kartu acak baru!\n");
+    ui->printMessage("Kartu yang didapat: " + newCard->getName() + " - " + newCard->getDescription() +
+         "\n");
 
     try {
         player.addCard(newCard);
-        cout << "Kartu ditambahkan ke tangan. Tangan: " << player.getHand().size() << " kartu.\n";
+        ui->printMessage("Kartu ditambahkan ke tangan. Tangan: " + to_string(player.getHand().size()) + " kartu.\n");
     } catch (const CardLimitException&) {
-        cout << "PERINGATAN: Kamu sudah memiliki 3 kartu di tangan (Maksimal 3)!\n";
-        cout << "Kamu diwajibkan membuang 1 kartu.\n";
+        ui->printMessage("PERINGATAN: Kamu sudah memiliki 3 kartu di tangan (Maksimal 3)!\n");
+        ui->printMessage("Kamu diwajibkan membuang 1 kartu.\n");
 
         const auto& hand = player.getHand();
-        cout << "Daftar Kartu Kemampuan Anda:\n";
+        ui->printMessage("Daftar Kartu Kemampuan Anda:\n");
         for (int i = 0; i < static_cast<int>(hand.size()); i++) {
-            cout << (i + 1) << ". " << hand[i]->getName() << " - " << hand[i]->getDescription()
-                 << "\n";
+            ui->printMessage(to_string(i + 1) + ". " + hand[i]->getName() + " - " + hand[i]->getDescription() +
+                 "\n");
         }
-        cout << (hand.size() + 1) << ". " << newCard->getName() << " - "
-             << newCard->getDescription() << " [BARU]\n";
-        cout << "Pilih nomor kartu yang ingin dibuang (1-" << (hand.size() + 1) << "): ";
+        ui->printMessage(to_string(hand.size() + 1) + ". " + newCard->getName() + " - " +
+             newCard->getDescription() + " [BARU]\n");
+        ui->printMessage("Pilih nomor kartu yang ingin dibuang (1-" + to_string(hand.size() + 1) + "): ");
 
-        int dropChoice = 0;
-        cin >> dropChoice;
-        cin.ignore();
+        int dropChoice = ui->readInt();
 
         if (dropChoice >= 1 && dropChoice <= static_cast<int>(hand.size())) {
             SkillCard* toDiscard = hand[dropChoice - 1];
             player.removeCard(toDiscard);
             skillDeck->discard(toDiscard);
-            cout << toDiscard->getName() << " telah dibuang.\n";
+            ui->printMessage(toDiscard->getName() + " telah dibuang.\n");
             player.addCard(newCard);
         } else {
             // Discard the new card (also covers out-of-range)
             skillDeck->discard(newCard);
-            cout << newCard->getName() << " (baru) telah dibuang.\n";
+            ui->printMessage(newCard->getName() + " (baru) telah dibuang.\n");
         }
-        cout << "Sekarang kamu memiliki " << player.getHand().size() << " kartu di tangan.\n";
+        ui->printMessage("Sekarang kamu memiliki " + to_string(player.getHand().size()) + " kartu di tangan.\n");
     }
 }
 
@@ -379,7 +375,7 @@ void Game::handleCardDrop(Player& player, SkillCard* newCard) {
 
 void Game::handleCommand(const string& input, Player& player) {
     commandHandler.dispatch(
-        input, player, *this, propertyManager, *board, *dice, skillDeck.get(), view, logger,
+        input, player, *this, propertyManager, *board, *dice, skillDeck.get(), ui, logger,
         lastDiceTotal, [this](const string& filename) { saveGame(filename); }, players);
 }
 
@@ -442,7 +438,7 @@ void Game::movePlayerBy(Player& player, int steps) {
 
     Tile* t = board->getTileAt(newPos);
     string tileName = t ? t->getName() : "?";
-    cout << "Bidak mendarat di: " << tileName << ".\n";
+    ui->printMessage("Bidak mendarat di: " + tileName + ".\n");
     logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "GERAK",
                     "Posisi " + to_string(oldPos) + " -> " + to_string(newPos) + " (" + tileName +
                         ")");
@@ -460,7 +456,7 @@ void Game::movePlayerTo(Player& player, int tileIndex) {
 
     Tile* t = board->getTileAt(tileIndex);
     string tileName = t ? t->getName() : "?";
-    cout << "Bidak dipindahkan ke: " << tileName << ".\n";
+    ui->printMessage("Bidak dipindahkan ke: " + tileName + ".\n");
     logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "GERAK",
                     "Posisi " + to_string(oldPos) + " -> " + to_string(tileIndex) + " (" +
                         tileName + ")");
@@ -477,7 +473,7 @@ void Game::repositionPlayer(Player& player, int tileIndex) {
 
     Tile* t = board->getTileAt(tileIndex);
     string tileName = t ? t->getName() : "?";
-    cout << player.getUsername() << " dipindahkan ke " << tileName << " (tanpa efek).\n";
+    ui->printMessage(player.getUsername() + " dipindahkan ke " + tileName + " (tanpa efek).\n");
     logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "REPOSITION",
                     "Posisi " + to_string(oldPos) + " -> " + to_string(tileIndex) + " (" +
                         tileName + ")");
@@ -503,7 +499,7 @@ void Game::sendPlayerToJail(Player& player) {
     player.goToJail();
     player.setPosition(board->getJailPosition());
     dice->resetDoublesCount();
-    cout << player.getUsername() << " masuk penjara!\n";
+    ui->printMessage(player.getUsername() + " masuk penjara!\n");
     logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "PENJARA",
                     "Masuk penjara di petak " + to_string(board->getJailPosition()));
 }
@@ -511,29 +507,29 @@ void Game::sendPlayerToJail(Player& player) {
 // ── IGameContext: financial operations (delegated to FinanceManager) ─────────
 
 void Game::grantSalary(Player& player) {
-    financeManager.grantSalary(player, config, getCurrentTurn(), logger);
+    financeManager.grantSalary(player, config, getCurrentTurn(), logger, ui);
 }
 
 void Game::transferMoney(Player& payer, Player& collector, int amount) {
-    financeManager.transferMoney(payer, collector, amount, getCurrentTurn(), logger, *this);
+    financeManager.transferMoney(payer, collector, amount, getCurrentTurn(), logger, *this, ui);
 }
 
 void Game::chargeToBank(Player& player, int amount) {
-    financeManager.chargeToBank(player, amount, getCurrentTurn(), logger, *this);
+    financeManager.chargeToBank(player, amount, getCurrentTurn(), logger, *this, ui);
 }
 
 void Game::chargeVoluntary(Player& player, int amount) {
-    financeManager.chargeVoluntary(player, amount, getCurrentTurn(), logger, *this);
+    financeManager.chargeVoluntary(player, amount, getCurrentTurn(), logger, *this, ui);
 }
 
 void Game::collectFromAll(Player& collector, int amountPerPlayer) {
     financeManager.collectFromAll(collector, amountPerPlayer, getActivePlayers(), getCurrentTurn(),
-                                  logger, *this);
+                                  logger, *this, ui);
 }
 
 void Game::payToAll(Player& payer, int amountPerPlayer) {
     financeManager.payToAll(payer, amountPerPlayer, getActivePlayers(), getCurrentTurn(), logger,
-                            *this);
+                            *this, ui);
 }
 
 // ── IGameContext: property operations ────────────────────────────────────────
@@ -546,7 +542,7 @@ void Game::grantProperty(Player& player, PropertyTile& tile) {
     tile.setOwner(&player);
     player.addProperty(&tile);
     updateMonopolyStatus();
-    cout << tile.getName() << " kini menjadi milik " << player.getUsername() << ".\n";
+    ui->printMessage(tile.getName() + " kini menjadi milik " + player.getUsername() + ".\n");
     logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "PROPERTI",
                     "Dapat " + tile.getName() + " (" + tile.getCode() + ")");
 }
@@ -591,312 +587,49 @@ void Game::refreshMonopolyStatus() {
 // ── IGameContext: UI-mediated interactions ────────────────────────────────────
 
 bool Game::promptBuyProperty(Player& player, PropertyTile& tile) {
-    if (!view)
+    if (!ui)
         return false;
-    cout << "\nKamu mendarat di " << tile.getName() << " (" << tile.getCode() << ")!\n";
-    if (view)
-        view->printPropertyDeed(tile);
-    cout << "Uang kamu saat ini: M" << player.getMoney() << "\n";
-    cout << "Apakah kamu ingin membeli properti ini seharga M" << tile.getPrice() << "? (y/n): ";
-    char c;
-    cin >> c;
-    cin.ignore();
-    return (c == 'y' || c == 'Y');
+    return ui->promptBuyProperty(player, tile);
 }
 
 PropertyTile* Game::promptSelectOpponentProperty(Player& player) {
-    if (!view)
+    if (!ui)
         return nullptr;
-    vector<pair<Player*, PropertyTile*>> opts;
-    for (auto& p : players) {
-        if (p.get() == &player || p->getStatus() == PlayerStatus::BANKRUPT)
-            continue;
-        for (PropertyTile* prop : p->getProperties()) {
-            auto* s = dynamic_cast<StreetTile*>(prop);
-            if (s && s->getPropertyLevel() > 0)
-                opts.push_back({p.get(), prop});
-        }
-    }
-    if (opts.empty()) {
-        cout << "Tidak ada properti lawan yang memiliki bangunan.\n";
-        return nullptr;
-    }
-    cout << "=== Pilih Properti Lawan untuk Dihancurkan ===\n";
-    for (int i = 0; i < static_cast<int>(opts.size()); i++) {
-        auto* s = dynamic_cast<StreetTile*>(opts[i].second);
-        int lvl = s ? s->getPropertyLevel() : 0;
-        string lvlStr = (lvl == 5) ? "Hotel" : to_string(lvl) + " rumah";
-        cout << (i + 1) << ". " << opts[i].second->getName() << " (" << opts[i].second->getCode()
-             << ") milik " << opts[i].first->getUsername() << " - " << lvlStr << "\n";
-    }
-    cout << "0. Batal\nPilih: ";
-    int c = 0;
-    cin >> c;
-    cin.ignore();
-    if (c < 1 || c > static_cast<int>(opts.size()))
-        return nullptr;
-    return opts[c - 1].second;
+    return ui->promptSelectOpponentProperty(player, getActivePlayers(), *board);
 }
 
 Player* Game::promptSelectTarget(Player& player) {
-    if (!view)
+    if (!ui)
         return nullptr;
-    const int boardSize = board->getTotalTiles();
-    const int myPos = player.getPosition();
-    vector<Player*> targets;
-    for (auto& p : players) {
-        if (p.get() == &player || p->getStatus() == PlayerStatus::BANKRUPT)
-            continue;
-        // Only allow targets that are strictly ahead (circularly)
-        int dist = (p->getPosition() - myPos + boardSize) % boardSize;
-        if (dist == 0)
-            continue;
-        targets.push_back(p.get());
-    }
-    if (targets.empty()) {
-        cout << "Tidak ada pemain lawan yang berada di depan posisi kamu.\n";
-        return nullptr;
-    }
-    cout << "=== Pilih Target Pemain (di depan posisi kamu) ===\n";
-    for (int i = 0; i < static_cast<int>(targets.size()); i++) {
-        cout << (i + 1) << ". " << targets[i]->getUsername() << " (posisi "
-             << targets[i]->getPosition() << ")\n";
-    }
-    cout << "0. Batal\nPilih: ";
-    int c = 0;
-    cin >> c;
-    cin.ignore();
-    if (c < 1 || c > static_cast<int>(targets.size()))
-        return nullptr;
-    return targets[c - 1];
+    return ui->promptSelectTarget(player, getActivePlayers(), *board);
 }
 
 int Game::promptTaxChoice(Player& player, int flat, int pct) {
-    if (!view)
+    if (!ui)
         return 1;
-    cout << "\nKamu mendarat di Pajak Penghasilan (PPH)!\n";
-    cout << "Pilih opsi pembayaran pajak:\n";
-    cout << "1. Bayar flat M" << flat << "\n";
-    cout << "2. Bayar " << pct << "% dari total kekayaan\n";
-    cout << "Pilihan (1/2): ";
-    int choice = 1;
-    cin >> choice;
-    cin.ignore();
-    if (choice == 2) {
-        // Wealth is calculated AFTER the player has chosen — per spec requirement
-        int totalWealth = player.getTotalWealth();
-        int percentageAmount = totalWealth * pct / 100;
-        cout << "Total kekayaan kamu:\n";
-        cout << "  Uang tunai          : M" << player.getMoney() << "\n";
-        cout << "  Harga beli properti : M" << player.getPropertyValue() << "\n";
-        cout << "  Total               : M" << totalWealth << "\n";
-        cout << "Pajak " << pct << "%             : M" << percentageAmount << "\n";
-    }
-    return (choice == 2) ? 2 : 1;
+    return ui->promptTaxChoice(player, flat, pct);
 }
 
 int Game::promptTileIndex(Player& player) {
-    if (!view)
+    if (!ui)
         return 0;
-    cout << "=== Pilih Petak Tujuan (TeleportCard) ===\n";
-    for (int i = 0; i < board->getTotalTiles(); i++) {
-        Tile* t = board->getTileAt(i);
-        if (t)
-            cout << i << ". " << t->getCode() << " - " << t->getName() << "\n";
-    }
-    cout << "Masukkan nomor petak (0-" << (board->getTotalTiles() - 1) << "): ";
-    int idx = 0;
-    cin >> idx;
-    cin.ignore();
-    if (idx < 0 || idx >= board->getTotalTiles())
-        idx = 0;
-    return idx;
+    return ui->promptTileIndex(player, *board);
 }
 
 void Game::promptFestivalSelection(Player& player) {
-    if (!view)
+    if (!ui)
         return;
-    const auto& props = player.getProperties();
-    if (props.empty()) {
-        cout << "Kamu tidak memiliki properti yang dapat dipilih.\n";
-        return;
-    }
-    cout << "\nKamu mendarat di petak Festival!\n";
-    cout << "Daftar properti milikmu:\n";
-    for (int i = 0; i < static_cast<int>(props.size()); i++) {
-        auto* p = props[i];
-        string festInfo = "";
-        if (p->hasFestival()) {
-            festInfo = " [Festival aktif x" + to_string(p->getFestivalMultiplier()) + ", sisa " +
-                       to_string(p->getFestivalDur()) + " giliran]";
-        }
-        cout << (i + 1) << ". " << p->getName() << " (" << p->getCode() << ")" << festInfo << "\n";
-    }
-    cout << "Masukkan nomor properti (0 untuk skip): ";
-    int choice = 0;
-    cin >> choice;
-    cin.ignore();
-    if (choice < 1 || choice > static_cast<int>(props.size())) {
-        cout << "Efek festival tidak diterapkan.\n";
-        return;
-    }
-    PropertyTile* selected = props[choice - 1];
-    int oldMult = selected->getFestivalMultiplier();
-    selected->activateFestival();
-    int newMult = selected->getFestivalMultiplier();
-
-    if (newMult > oldMult) {
-        cout << "Efek festival aktif! Sewa " << selected->getName() << ": x" << oldMult << " -> x"
-             << newMult << ". Durasi: 3 giliran.\n";
-        logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "FESTIVAL",
-                        selected->getName() + ": sewa x" + to_string(newMult) +
-                            ", durasi 3 giliran");
-    } else {
-        cout << "Efek sudah maksimum (harga sewa sudah digandakan tiga kali). "
-                "Durasi di-reset menjadi 3 giliran.\n";
-        logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "FESTIVAL",
-                        selected->getName() + ": durasi reset 3 giliran (max)");
-    }
+    ui->promptFestivalSelection(player);
 }
 
 pair<bool, int> Game::promptAuctionBid(Player& player, int currentBid, const PropertyTile& tile) {
-    while (true) {
-        cout << "Giliran: " << player.getUsername() << "\n";
-        cout << "Aksi (PASS / BID <jumlah>) > ";
-        string line;
-        getline(cin, line);
-        istringstream iss(line);
-        string cmd;
-        iss >> cmd;
-        transform(cmd.begin(), cmd.end(), cmd.begin(), ::toupper);
-        if (cmd == "BID") {
-            int amount = 0;
-            if (iss >> amount && amount > currentBid && amount <= player.getMoney()) {
-                return {true, amount};
-            }
-            if (amount <= currentBid)
-                cout << "Penawaran harus lebih tinggi dari M" << currentBid << ".\n";
-            else
-                cout << "Uang kamu tidak cukup (M" << player.getMoney() << ").\n";
-            // Re-prompt on invalid bid
-            continue;
-        }
-        if (cmd == "PASS") {
-            return {false, 0};
-        }
-        cout << "Perintah tidak valid. Gunakan PASS atau BID <jumlah>.\n";
-    }
+    if (!ui)
+        return {false, 0};
+    return ui->promptAuctionBid(player, currentBid, tile);
 }
 
 void Game::runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor) {
-    cout << "\nKamu tidak dapat membayar M" << amountNeeded << "!\n";
-    cout << "Uang kamu       : M" << debtor.getMoney() << "\n";
-    cout << "Total kewajiban : M" << amountNeeded << "\n";
-    cout << "Kekurangan      : M" << (amountNeeded - debtor.getMoney()) << "\n";
-    cout << "\nDana likuidasi dapat menutup kewajiban. Kamu wajib melikuidasi aset.\n";
-
-    while (debtor.getMoney() < amountNeeded) {
-        cout << "\n=== Panel Likuidasi ===\n";
-        cout << "Uang kamu saat ini: M" << debtor.getMoney() << "  |  Kewajiban: M" << amountNeeded
-             << "\n";
-
-        vector<PropertyTile*> sellable, mortgageable;
-        for (auto* prop : debtor.getProperties()) {
-            if (prop->isMortgaged())
-                continue;
-            sellable.push_back(prop);
-        }
-        for (auto* prop : debtor.getProperties()) {
-            if (prop->getStatus() == PropertyStatus::OWNED)
-                mortgageable.push_back(prop);
-        }
-
-        if (sellable.empty() && mortgageable.empty()) {
-            cout << "Tidak ada aset yang dapat dilikuidasi.\n";
-            break;
-        }
-
-        cout << "[Jual ke Bank]\n";
-        for (int i = 0; i < static_cast<int>(sellable.size()); i++) {
-            auto* s = dynamic_cast<StreetTile*>(sellable[i]);
-            int sellVal = sellable[i]->getPrice();
-            if (s) {
-                int lvl = s->getPropertyLevel();
-                if (lvl == 5) {
-                    sellVal += (s->getHotelPrice() + 4 * s->getHousePrice()) / 2;
-                } else {
-                    sellVal += lvl * s->getHousePrice() / 2;
-                }
-            }
-            cout << (i + 1) << ". " << sellable[i]->getName() << " (" << sellable[i]->getCode()
-                 << ")  Harga Jual: M" << sellVal << "\n";
-        }
-        cout << "[Gadaikan]\n";
-        for (int i = 0; i < static_cast<int>(mortgageable.size()); i++) {
-            cout << (static_cast<int>(sellable.size()) + i + 1) << ". "
-                 << mortgageable[i]->getName() << " (" << mortgageable[i]->getCode()
-                 << ")  Nilai Gadai: M" << mortgageable[i]->getMortgageValue() << "\n";
-        }
-        cout << "Pilih aksi (0 jika sudah cukup): ";
-
-        int choice = 0;
-        cin >> choice;
-        cin.ignore();
-
-        if (choice == 0) {
-            cout << "Kamu belum boleh keluar dari panel likuidasi sebelum kewajiban terpenuhi.\n";
-            continue;
-        }
-
-        if (choice >= 1 && choice <= static_cast<int>(sellable.size())) {
-            auto* prop = sellable[choice - 1];
-            auto* s = dynamic_cast<StreetTile*>(prop);
-            int sellVal = prop->getPrice();
-            if (s) {
-                int lvl = s->getPropertyLevel();
-                if (lvl == 5) {
-                    sellVal += (s->getHotelPrice() + 4 * s->getHousePrice()) / 2;
-                } else {
-                    sellVal += lvl * s->getHousePrice() / 2;
-                }
-                s->setPropertyLevel(0);
-            }
-            debtor.removeProperty(prop);
-            prop->releaseToBank();
-            debtor += sellVal;
-            updateMonopolyStatus();
-            cout << prop->getName() << " terjual ke Bank. Kamu menerima M" << sellVal << ".\n";
-            logger.logEvent(LogLevel::INFO, getCurrentTurn(), debtor.getUsername(), "JUAL",
-                            "Jual " + prop->getName() + " M" + to_string(sellVal));
-        } else {
-            int mIdx = choice - static_cast<int>(sellable.size()) - 1;
-            if (mIdx >= 0 && mIdx < static_cast<int>(mortgageable.size())) {
-                auto* prop = mortgageable[mIdx];
-                prop->mortgage();
-                debtor += prop->getMortgageValue();
-                cout << prop->getName() << " digadaikan. Kamu menerima M"
-                     << prop->getMortgageValue() << ".\n";
-                logger.logEvent(LogLevel::INFO, getCurrentTurn(), debtor.getUsername(), "GADAI",
-                                "Gadai " + prop->getName() + " M" +
-                                    to_string(prop->getMortgageValue()));
-            }
-        }
-    }
-
-    // Execute payment
-    if (debtor.getMoney() >= amountNeeded) {
-        debtor -= amountNeeded;
-        if (creditor) {
-            *creditor += amountNeeded;
-            cout << "Kewajiban M" << amountNeeded << " terpenuhi. Membayar ke "
-                 << creditor->getUsername() << "...\n";
-            cout << "Uang " << debtor.getUsername() << ": M" << debtor.getMoney() << "\n";
-            cout << "Uang " << creditor->getUsername() << ": M" << creditor->getMoney() << "\n";
-        } else {
-            cout << "Kewajiban M" << amountNeeded << " terpenuhi. Membayar ke Bank...\n";
-        }
+    if (!ui)
         return;
-    }
-
-    triggerBankruptcy(debtor, creditor, amountNeeded);
+    ui->runLiquidationPanel(debtor, amountNeeded, creditor, getActivePlayers(), *board);
 }

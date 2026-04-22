@@ -2,6 +2,7 @@
 #include "Board.hpp"
 #include "ColorGroup.hpp"
 #include "Exceptions.hpp"
+#include "IUserInteraction.hpp"
 #include "Logger.hpp"
 #include "Player.hpp"
 #include "PropertyTile.hpp"
@@ -14,7 +15,7 @@
 
 using namespace std;
 
-void PropertyManager::mortgage(Player& player, Board& board, int currentTurn, Logger& logger) {
+void PropertyManager::mortgage(Player& player, Board& board, int currentTurn, Logger& logger, IUserInteraction* ui) {
     vector<PropertyTile*> mortgageable;
     for (PropertyTile* prop : player.getProperties()) {
         if (prop->getStatus() == PropertyStatus::OWNED)
@@ -25,16 +26,18 @@ void PropertyManager::mortgage(Player& player, Board& board, int currentTurn, Lo
         throw GameStateException("Tidak ada properti yang dapat digadaikan saat ini.");
     }
 
-    cout << "=== Properti yang Dapat Digadaikan ===\n";
-    for (int i = 0; i < static_cast<int>(mortgageable.size()); i++) {
-        cout << (i + 1) << ". " << mortgageable[i]->getName() << " (" << mortgageable[i]->getCode()
-             << ")  Nilai Gadai: M" << mortgageable[i]->getMortgageValue() << "\n";
+    if (ui) {
+        string msg = "=== Properti yang Dapat Digadaikan ===\n";
+        for (int i = 0; i < static_cast<int>(mortgageable.size()); i++) {
+            msg += to_string(i + 1) + ". " + mortgageable[i]->getName() + " (" + mortgageable[i]->getCode()
+                 + ")  Nilai Gadai: M" + to_string(mortgageable[i]->getMortgageValue()) + "\n";
+        }
+        msg += "Pilih nomor properti (0 untuk batal): ";
+        ui->printMessage(msg);
     }
-    cout << "Pilih nomor properti (0 untuk batal): ";
 
     int choice = 0;
-    cin >> choice;
-    cin.ignore();
+    if (ui) choice = ui->readInt();
     if (choice < 1 || choice > static_cast<int>(mortgageable.size())) {
         if (choice == 0)
             return;
@@ -57,17 +60,19 @@ void PropertyManager::mortgage(Player& player, Board& board, int currentTurn, Lo
             }
         }
         if (hasBuildings) {
-            cout << selected->getName()
-                 << " tidak dapat digadaikan! Masih ada bangunan di "
-                    "color group ["
-                 << colorGroupToString(cg) << "].\n";
-            cout << "Jual semua bangunan color group [" << colorGroupToString(cg) << "]? (y/n): ";
-            char resp;
-            cin >> resp;
-            cin.ignore();
-            if (resp != 'y' && resp != 'Y') {
-                cout << "Dibatalkan.\n";
-                return;
+            if (ui) {
+                string msg = selected->getName()
+                     + " tidak dapat digadaikan! Masih ada bangunan di color group ["
+                     + colorGroupToString(cg) + "].\n";
+                msg += "Jual semua bangunan color group [" + colorGroupToString(cg) + "]? (y/n): ";
+                ui->printMessage(msg);
+            }
+            if (ui) {
+                string resp = ui->readLine();
+                if (resp.empty() || (resp[0] != 'y' && resp[0] != 'Y')) {
+                    if (ui) ui->printMessage("Dibatalkan.\n");
+                    return;
+                }
             }
             for (auto* s : groupStreets) {
                 int lvl = s->getPropertyLevel();
@@ -81,8 +86,10 @@ void PropertyManager::mortgage(Player& player, Board& board, int currentTurn, Lo
                 }
                 s->setPropertyLevel(0);
                 player += refund;
-                cout << "Bangunan " << s->getName() << " terjual. Kamu menerima M" << refund
-                     << ".\n";
+                if (ui) {
+                    ui->printMessage("Bangunan " + s->getName() + " terjual. Kamu menerima M" + to_string(refund)
+                         + ".\n");
+                }
                 logger.logEvent(LogLevel::INFO, currentTurn, player.getUsername(), "JUAL_BANGUNAN",
                                 "Jual bangunan " + s->getName() + " M" + to_string(refund));
             }
@@ -91,16 +98,18 @@ void PropertyManager::mortgage(Player& player, Board& board, int currentTurn, Lo
 
     selected->mortgage();
     player += selected->getMortgageValue();
-    cout << selected->getName() << " berhasil digadaikan. Kamu menerima M"
-         << selected->getMortgageValue() << " dari Bank.\n";
-    cout << "Uang kamu sekarang: M" << player.getMoney() << "\n";
-    cout << "Catatan: Sewa tidak dapat dipungut dari properti yang digadaikan.\n";
+    if (ui) {
+        ui->printMessage(selected->getName() + " berhasil digadaikan. Kamu menerima M"
+             + to_string(selected->getMortgageValue()) + " dari Bank.\n");
+        ui->printMessage("Uang kamu sekarang: M" + to_string(player.getMoney()) + "\n");
+        ui->printMessage("Catatan: Sewa tidak dapat dipungut dari properti yang digadaikan.\n");
+    }
     logger.logEvent(LogLevel::INFO, currentTurn, player.getUsername(), "GADAI",
                     "Gadai " + selected->getName() + " M" +
                         to_string(selected->getMortgageValue()));
 }
 
-void PropertyManager::redeem(Player& player, int currentTurn, Logger& logger) {
+void PropertyManager::redeem(Player& player, int currentTurn, Logger& logger, IUserInteraction* ui) {
     vector<PropertyTile*> mortgaged;
     for (PropertyTile* prop : player.getProperties()) {
         if (prop->isMortgaged())
@@ -111,17 +120,19 @@ void PropertyManager::redeem(Player& player, int currentTurn, Logger& logger) {
         throw GameStateException("Tidak ada properti yang sedang digadaikan.");
     }
 
-    cout << "=== Properti yang Sedang Digadaikan ===\n";
-    for (int i = 0; i < static_cast<int>(mortgaged.size()); i++) {
-        cout << (i + 1) << ". " << mortgaged[i]->getName() << " (" << mortgaged[i]->getCode()
-             << ")  [M]  Harga Tebus: M" << mortgaged[i]->getPrice() << "\n";
+    if (ui) {
+        string msg = "=== Properti yang Sedang Digadaikan ===\n";
+        for (int i = 0; i < static_cast<int>(mortgaged.size()); i++) {
+            msg += to_string(i + 1) + ". " + mortgaged[i]->getName() + " (" + mortgaged[i]->getCode()
+                 + ")  [M]  Harga Tebus: M" + to_string(mortgaged[i]->getPrice()) + "\n";
+        }
+        msg += "Uang kamu saat ini: M" + to_string(player.getMoney()) + "\n";
+        msg += "Pilih nomor properti (0 untuk batal): ";
+        ui->printMessage(msg);
     }
-    cout << "Uang kamu saat ini: M" << player.getMoney() << "\n";
-    cout << "Pilih nomor properti (0 untuk batal): ";
 
     int choice = 0;
-    cin >> choice;
-    cin.ignore();
+    if (ui) choice = ui->readInt();
     if (choice < 1 || choice > static_cast<int>(mortgaged.size())) {
         if (choice == 0)
             return;
@@ -137,14 +148,16 @@ void PropertyManager::redeem(Player& player, int currentTurn, Logger& logger) {
 
     player -= redeemPrice;
     selected->unmortgage();
-    cout << selected->getName() << " berhasil ditebus! Kamu membayar M" << redeemPrice
-         << " ke Bank.\n";
-    cout << "Uang kamu sekarang: M" << player.getMoney() << "\n";
+    if (ui) {
+        ui->printMessage(selected->getName() + " berhasil ditebus! Kamu membayar M" + to_string(redeemPrice)
+             + " ke Bank.\n");
+        ui->printMessage("Uang kamu sekarang: M" + to_string(player.getMoney()) + "\n");
+    }
     logger.logEvent(LogLevel::INFO, currentTurn, player.getUsername(), "TEBUS",
                     "Tebus " + selected->getName() + " M" + to_string(redeemPrice));
 }
 
-void PropertyManager::build(Player& player, Board& board, int currentTurn, Logger& logger) {
+void PropertyManager::build(Player& player, Board& board, int currentTurn, Logger& logger, IUserInteraction* ui) {
     vector<ColorGroup> monoGroups = player.getMonopolyGroups();
     if (monoGroups.empty()) {
         throw GameStateException(
@@ -177,24 +190,26 @@ void PropertyManager::build(Player& player, Board& board, int currentTurn, Logge
         throw GameStateException("Tidak ada color group yang memenuhi syarat untuk dibangun.");
     }
 
-    cout << "=== Color Group yang Memenuhi Syarat ===\n";
-    for (int i = 0; i < static_cast<int>(buildableGroups.size()); i++) {
-        auto& gi = buildableGroups[i];
-        cout << (i + 1) << ". [" << colorGroupToString(gi.cg) << "]\n";
-        for (auto* s : gi.streets) {
-            int lvl = s->getPropertyLevel();
-            string lvlStr = (lvl == 5) ? "Hotel" : to_string(lvl) + " rumah";
-            int price = (lvl >= 4) ? s->getHotelPrice() : s->getHousePrice();
-            cout << "  - " << s->getName() << " (" << s->getCode() << "): " << lvlStr
-                 << " (Harga bangun: M" << price << ")\n";
+    if (ui) {
+        string msg = "=== Color Group yang Memenuhi Syarat ===\n";
+        for (int i = 0; i < static_cast<int>(buildableGroups.size()); i++) {
+            auto& gi = buildableGroups[i];
+            msg += to_string(i + 1) + ". [" + colorGroupToString(gi.cg) + "]\n";
+            for (auto* s : gi.streets) {
+                int lvl = s->getPropertyLevel();
+                string lvlStr = (lvl == 5) ? "Hotel" : to_string(lvl) + " rumah";
+                int price = (lvl >= 4) ? s->getHotelPrice() : s->getHousePrice();
+                msg += "  - " + s->getName() + " (" + s->getCode() + "): " + lvlStr
+                     + " (Harga bangun: M" + to_string(price) + ")\n";
+            }
         }
+        msg += "Uang kamu saat ini: M" + to_string(player.getMoney()) + "\n";
+        msg += "Pilih nomor color group (0 untuk batal): ";
+        ui->printMessage(msg);
     }
-    cout << "Uang kamu saat ini: M" << player.getMoney() << "\n";
-    cout << "Pilih nomor color group (0 untuk batal): ";
 
     int groupChoice = 0;
-    cin >> groupChoice;
-    cin.ignore();
+    if (ui) groupChoice = ui->readInt();
     if (groupChoice < 1 || groupChoice > static_cast<int>(buildableGroups.size())) {
         if (groupChoice == 0)
             return;
@@ -232,28 +247,30 @@ void PropertyManager::build(Player& player, Board& board, int currentTurn, Logge
             "Tidak ada petak yang dapat dibangun saat ini (semua sudah hotel).");
     }
 
-    cout << "Color group [" << colorGroupToString(selectedGroup.cg) << "]:\n";
-    for (auto* s : selectedGroup.streets) {
-        int lvl = s->getPropertyLevel();
-        string lvlStr = (lvl == 5) ? "Hotel" : to_string(lvl) + " rumah";
-        bool canBuild = find(buildable.begin(), buildable.end(), s) != buildable.end();
-        cout << "- " << s->getName() << " (" << s->getCode() << "): " << lvlStr
-             << (canBuild ? "  <- dapat dibangun" : "") << "\n";
-    }
+    if (ui) {
+        string msg = "Color group [" + colorGroupToString(selectedGroup.cg) + "]:\n";
+        for (auto* s : selectedGroup.streets) {
+            int lvl = s->getPropertyLevel();
+            string lvlStr = (lvl == 5) ? "Hotel" : to_string(lvl) + " rumah";
+            bool canBuild = find(buildable.begin(), buildable.end(), s) != buildable.end();
+            msg += "- " + s->getName() + " (" + s->getCode() + "): " + lvlStr
+                 + (canBuild ? "  <- dapat dibangun" : "") + "\n";
+        }
 
-    cout << "\nPetak yang dapat dibangun:\n";
-    for (int i = 0; i < static_cast<int>(buildable.size()); i++) {
-        auto* s = buildable[i];
-        int lvl = s->getPropertyLevel();
-        string action = (lvl == 4) ? "Upgrade ke Hotel" : "Bangun 1 Rumah";
-        int cost = (lvl >= 4) ? s->getHotelPrice() : s->getHousePrice();
-        cout << (i + 1) << ". " << s->getName() << " - " << action << " (M" << cost << ")\n";
+        msg += "\nPetak yang dapat dibangun:\n";
+        for (int i = 0; i < static_cast<int>(buildable.size()); i++) {
+            auto* s = buildable[i];
+            int lvl = s->getPropertyLevel();
+            string action = (lvl == 4) ? "Upgrade ke Hotel" : "Bangun 1 Rumah";
+            int cost = (lvl >= 4) ? s->getHotelPrice() : s->getHousePrice();
+            msg += to_string(i + 1) + ". " + s->getName() + " - " + action + " (M" + to_string(cost) + ")\n";
+        }
+        msg += "Pilih petak (0 untuk batal): ";
+        ui->printMessage(msg);
     }
-    cout << "Pilih petak (0 untuk batal): ";
 
     int buildChoice = 0;
-    cin >> buildChoice;
-    cin.ignore();
+    if (ui) buildChoice = ui->readInt();
     if (buildChoice < 1 || buildChoice > static_cast<int>(buildable.size())) {
         if (buildChoice == 0)
             return;
@@ -272,13 +289,13 @@ void PropertyManager::build(Player& player, Board& board, int currentTurn, Logge
     string logDetail;
     if (lvl == 4) {
         toBuild->buildHotel();
-        cout << toBuild->getName() << " di-upgrade ke Hotel! Biaya: M" << cost << "\n";
+        if (ui) ui->printMessage(toBuild->getName() + " di-upgrade ke Hotel! Biaya: M" + to_string(cost) + "\n");
         logDetail = "Hotel di " + toBuild->getName();
     } else {
         toBuild->buildHouse();
-        cout << "1 rumah dibangun di " << toBuild->getName() << ". Biaya: M" << cost << "\n";
+        if (ui) ui->printMessage("1 rumah dibangun di " + toBuild->getName() + ". Biaya: M" + to_string(cost) + "\n");
         logDetail = "Rumah L" + to_string(lvl + 1) + " di " + toBuild->getName();
     }
-    cout << "Uang tersisa: M" << player.getMoney() << "\n";
+    if (ui) ui->printMessage("Uang tersisa: M" + to_string(player.getMoney()) + "\n");
     logger.logEvent(LogLevel::INFO, currentTurn, player.getUsername(), "BANGUN", logDetail);
 }
