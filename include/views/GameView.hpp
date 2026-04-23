@@ -29,14 +29,14 @@ public:
     void displayMainMenu() const;
 
     /// @brief Prompts for username settings and number of players at the beginning of the setup.
-    /// @return A vector of strings containing player names.
-    std::vector<std::string> promptPlayerSetup() override;
+    /// @return A vector of strings containing player names and bool isComputer.
+    std::vector<std::pair<std::string, bool>> promptPlayerSetup() override;
 
     /// @brief Renders the visual representation of the game board.
     /// @param board Const reference to the board logic.
     /// @param players Const reference to the list of players on the board.
-    void displayBoard(const Board& board, const std::vector<Player*>& players,
-                      int currentTurn = -1, int maxTurn = 50) const override;
+    void displayBoard(const Board& board, const std::vector<Player*>& players, int currentTurn = -1,
+                      int maxTurn = 50) const override;
 
     /// @brief Renders an individual property tile detail and its ownership statuses.
     /// @param property Referencing a property tile component.
@@ -74,8 +74,7 @@ public:
 
     // ── Prompts (moved from IGameContext) ──────────────────────────────────────
     bool promptBuyProperty(Player& player, PropertyTile& tile) override;
-    PropertyTile* promptSelectOpponentProperty(Player& player,
-                                               const std::vector<Player*>& players,
+    PropertyTile* promptSelectOpponentProperty(Player& player, const std::vector<Player*>& players,
                                                const Board& board) override;
     Player* promptSelectTarget(Player& player, const std::vector<Player*>& players,
                                const Board& board) override;
@@ -85,6 +84,5 @@ public:
     std::pair<bool, int> promptAuctionBid(Player& player, int currentBid,
                                           const PropertyTile& tile) override;
     void runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor,
-                             const std::vector<Player*>& players,
-                             const Board& board) override;
+                             const std::vector<Player*>& players, const Board& board) override;
 };

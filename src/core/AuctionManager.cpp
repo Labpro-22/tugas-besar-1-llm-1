@@ -14,7 +14,8 @@ AuctionManager::~AuctionManager() {}
 
 void AuctionManager::runAuction(PropertyTile& tile, const vector<Player*>& bidderOrder,
                                 IGameContext& ctx) {
-    if (bidderOrder.empty()) return;
+    if (bidderOrder.empty())
+        return;
 
     const int bidderCount = static_cast<int>(bidderOrder.size());
     int highBid = -1;
@@ -47,12 +48,23 @@ void AuctionManager::runAuction(PropertyTile& tile, const vector<Player*>& bidde
             consecutivePasses = 0;
             cout << bidder->getUsername() << " menawar M" << amount << "!\n";
             ctx.getLogger().logEvent(LogLevel::INFO, ctx.getCurrentTurn(), bidder->getUsername(),
-                                     "LELANG_BID",
-                                     tile.getCode() + " M" + to_string(amount));
+                                     "LELANG_BID", tile.getCode() + " M" + to_string(amount));
         } else if (mustBid) {
-            cout << "Belum ada penawaran. " << bidder->getUsername()
-                 << " harus memasukkan BID yang valid.\n";
-            continue;
+            if (bidder->getIsComputer()) {
+                int forcedBid = (highBid < 0) ? 0 : highBid;
+                highBid = forcedBid;
+                highBidder = bidder;
+                consecutivePasses = 0;
+                cout << bidder->getUsername() << " terpaksa menawar minimum M" << forcedBid
+                     << "!\n";
+                ctx.getLogger().logEvent(LogLevel::INFO, ctx.getCurrentTurn(),
+                                         bidder->getUsername(), "LELANG_BID",
+                                         tile.getCode() + " M" + to_string(forcedBid));
+            } else {
+                cout << "Belum ada penawaran. " << bidder->getUsername()
+                     << " harus memasukkan BID yang valid.\n";
+                continue;
+            }
         } else {
             ++consecutivePasses;
             cout << bidder->getUsername() << " melewati lelang.\n";
@@ -71,8 +83,7 @@ void AuctionManager::runAuction(PropertyTile& tile, const vector<Player*>& bidde
         cout << highBidder->getUsername() << " memenangkan lelang dengan penawaran M" << highBid
              << "!\n";
         ctx.getLogger().logEvent(LogLevel::INFO, ctx.getCurrentTurn(), highBidder->getUsername(),
-                                 "LELANG_MENANG",
-                                 tile.getCode() + " M" + to_string(highBid));
+                                 "LELANG_MENANG", tile.getCode() + " M" + to_string(highBid));
         ctx.chargeVoluntary(*highBidder, highBid);
         if (highBidder->getStatus() != PlayerStatus::BANKRUPT) {
             ctx.grantProperty(*highBidder, tile);

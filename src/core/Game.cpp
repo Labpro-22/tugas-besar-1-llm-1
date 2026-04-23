@@ -128,9 +128,10 @@ void Game::createGame() {
     communityDeck = move(newCommunityDeck);
     skillDeck = move(newSkillDeck);
 
-    vector<string> names = ui->promptPlayerSetup();
-    for (int i = 0; i < static_cast<int>(names.size()); ++i) {
-        players.push_back(make_unique<Player>(i, names[i]));
+    auto setups = ui->promptPlayerSetup();
+    for (int i = 0; i < static_cast<int>(setups.size()); ++i) {
+        players.push_back(make_unique<Player>(i, setups[i].first));
+        players.back()->setIsComputer(setups[i].second);
         *players.back() += config.startingBalance;
     }
 
@@ -210,7 +211,23 @@ void Game::runTurn(Player& player) {
                 return;
             if (!ui)
                 return;
-            string input = ui->getCommandInput(player);
+            string input;
+            if (player.getIsComputer()) {
+                if (!player.getHasUsedSkillThisTurn() && !player.getHand().empty() &&
+                    rand() % 100 < 20) {
+                    input = "GUNAKAN_KEMAMPUAN";
+                } else if (rand() % 100 < 10) {
+                    input = "TEBUS";
+                } else if (rand() % 100 < 10) {
+                    input = "BANGUN";
+                } else {
+                    input = "LEMPAR_DADU";
+                }
+                ui->printMessage("\n[" + player.getUsername() + " (COM) | M" +
+                                 to_string(player.getMoney()) + "] > " + input + "\n");
+            } else {
+                input = ui->getCommandInput(player);
+            }
             handleCommand(input, player);
         }
         return;
@@ -227,7 +244,23 @@ void Game::runTurn(Player& player) {
                 return;
             if (!ui)
                 return;
-            string input = ui->getCommandInput(player);
+            string input;
+            if (player.getIsComputer()) {
+                if (!player.getHasUsedSkillThisTurn() && !player.getHand().empty() &&
+                    rand() % 100 < 20) {
+                    input = "GUNAKAN_KEMAMPUAN";
+                } else if (rand() % 100 < 10) {
+                    input = "TEBUS";
+                } else if (rand() % 100 < 10) {
+                    input = "BANGUN";
+                } else {
+                    input = "LEMPAR_DADU";
+                }
+                ui->printMessage("\n[" + player.getUsername() + " (COM) | M" +
+                                 to_string(player.getMoney()) + "] > " + input + "\n");
+            } else {
+                input = ui->getCommandInput(player);
+            }
             handleCommand(input, player);
         }
 
@@ -248,14 +281,16 @@ bool Game::handleJailTurn(Player& player) {
 
     // Turn 4 (jailTurns == 3): forced payment
     if (jailTurns >= 3) {
-        ui->printMessage("Giliran ke-4 di penjara. Wajib membayar denda M" + to_string(config.jailFine) + ".\n");
+        ui->printMessage("Giliran ke-4 di penjara. Wajib membayar denda M" +
+                         to_string(config.jailFine) + ".\n");
         chargeVoluntary(player, config.jailFine);
         player.releaseFromJail();
         ui->printMessage(player.getUsername() + " keluar dari penjara.\n");
         // Take regular roll
         lastDiceTotal = dice->rollRandom();
         auto dv = dice->getDiceValues();
-        ui->printMessage("Dadu: " + to_string(dv.first) + " + " + to_string(dv.second) + " = " + to_string(lastDiceTotal) + "\n");
+        ui->printMessage("Dadu: " + to_string(dv.first) + " + " + to_string(dv.second) + " = " +
+                         to_string(lastDiceTotal) + "\n");
         logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "DADU",
                         "Lempar: " + to_string(dv.first) + "+" + to_string(dv.second) + "=" +
                             to_string(lastDiceTotal) + " (keluar penjara, bayar denda)");
@@ -269,9 +304,22 @@ bool Game::handleJailTurn(Player& player) {
     if (player.hasJailFreeCard()) {
         ui->printMessage("3. KARTU - gunakan kartu Bebas dari Penjara\n");
     }
-    ui->printMessage("Pilih (BAYAR/LEMPAR" + string(player.hasJailFreeCard() ? "/KARTU" : "") + "): ");
+    ui->printMessage("Pilih (BAYAR/LEMPAR" + string(player.hasJailFreeCard() ? "/KARTU" : "") +
+                     "): ");
 
-    string choice = ui->readLine();
+    string choice;
+    if (player.getIsComputer()) {
+        int r = rand() % 100;
+        if (r < 10 && player.getMoney() >= config.jailFine)
+            choice = "BAYAR";
+        else if (player.hasJailFreeCard() && r < 40)
+            choice = "KARTU";
+        else
+            choice = "LEMPAR";
+        ui->printMessage(choice + "\n");
+    } else {
+        choice = ui->readLine();
+    }
     transform(choice.begin(), choice.end(), choice.begin(), ::toupper);
 
     if (choice == "KARTU" || choice == "3") {
@@ -283,12 +331,13 @@ bool Game::handleJailTurn(Player& player) {
         player.useJailFreeCard();
         player.releaseFromJail();
         ui->printMessage(player.getUsername() +
-             " menggunakan kartu Bebas dari Penjara dan keluar dari penjara!\n");
+                         " menggunakan kartu Bebas dari Penjara dan keluar dari penjara!\n");
         logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "PENJARA",
                         "Keluar penjara via kartu Bebas dari Penjara");
         lastDiceTotal = dice->rollRandom();
         auto dv = dice->getDiceValues();
-        ui->printMessage("Dadu: " + to_string(dv.first) + " + " + to_string(dv.second) + " = " + to_string(lastDiceTotal) + "\n");
+        ui->printMessage("Dadu: " + to_string(dv.first) + " + " + to_string(dv.second) + " = " +
+                         to_string(lastDiceTotal) + "\n");
         movePlayerBy(player, lastDiceTotal);
         return false;
     } else if (choice == "BAYAR" || choice == "1") {
@@ -296,12 +345,13 @@ bool Game::handleJailTurn(Player& player) {
         if (player.getStatus() == PlayerStatus::ACTIVE) {
             player.releaseFromJail();
             ui->printMessage(player.getUsername() + " membayar M" + to_string(config.jailFine) +
-                 " dan keluar dari penjara.\n");
+                             " dan keluar dari penjara.\n");
             logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "PENJARA",
                             "Bayar denda M" + to_string(config.jailFine) + " dan keluar penjara");
             lastDiceTotal = dice->rollRandom();
             auto dv = dice->getDiceValues();
-            ui->printMessage("Dadu: " + to_string(dv.first) + " + " + to_string(dv.second) + " = " + to_string(lastDiceTotal) + "\n");
+            ui->printMessage("Dadu: " + to_string(dv.first) + " + " + to_string(dv.second) + " = " +
+                             to_string(lastDiceTotal) + "\n");
             movePlayerBy(player, lastDiceTotal);
         }
         return false;
@@ -310,7 +360,8 @@ bool Game::handleJailTurn(Player& player) {
         dice->resetDoublesCount();
         lastDiceTotal = dice->rollRandom();
         auto dv = dice->getDiceValues();
-        ui->printMessage("Dadu: " + to_string(dv.first) + " + " + to_string(dv.second) + " = " + to_string(lastDiceTotal) + "\n");
+        ui->printMessage("Dadu: " + to_string(dv.first) + " + " + to_string(dv.second) + " = " +
+                         to_string(lastDiceTotal) + "\n");
         logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "DADU",
                         "Lempar di penjara: " + to_string(dv.first) + "+" + to_string(dv.second) +
                             "=" + to_string(lastDiceTotal));
@@ -334,12 +385,13 @@ void Game::handleCardDrop(Player& player, SkillCard* newCard) {
     if (!newCard)
         return;
     ui->printMessage("\nKamu mendapatkan 1 kartu acak baru!\n");
-    ui->printMessage("Kartu yang didapat: " + newCard->getName() + " - " + newCard->getDescription() +
-         "\n");
+    ui->printMessage("Kartu yang didapat: " + newCard->getName() + " - " +
+                     newCard->getDescription() + "\n");
 
     try {
         player.addCard(newCard);
-        ui->printMessage("Kartu ditambahkan ke tangan. Tangan: " + to_string(player.getHand().size()) + " kartu.\n");
+        ui->printMessage("Kartu ditambahkan ke tangan. Tangan: " +
+                         to_string(player.getHand().size()) + " kartu.\n");
     } catch (const CardLimitException&) {
         ui->printMessage("PERINGATAN: Kamu sudah memiliki 3 kartu di tangan (Maksimal 3)!\n");
         ui->printMessage("Kamu diwajibkan membuang 1 kartu.\n");
@@ -347,14 +399,21 @@ void Game::handleCardDrop(Player& player, SkillCard* newCard) {
         const auto& hand = player.getHand();
         ui->printMessage("Daftar Kartu Kemampuan Anda:\n");
         for (int i = 0; i < static_cast<int>(hand.size()); i++) {
-            ui->printMessage(to_string(i + 1) + ". " + hand[i]->getName() + " - " + hand[i]->getDescription() +
-                 "\n");
+            ui->printMessage(to_string(i + 1) + ". " + hand[i]->getName() + " - " +
+                             hand[i]->getDescription() + "\n");
         }
         ui->printMessage(to_string(hand.size() + 1) + ". " + newCard->getName() + " - " +
-             newCard->getDescription() + " [BARU]\n");
-        ui->printMessage("Pilih nomor kartu yang ingin dibuang (1-" + to_string(hand.size() + 1) + "): ");
+                         newCard->getDescription() + " [BARU]\n");
+        ui->printMessage("Pilih nomor kartu yang ingin dibuang (1-" + to_string(hand.size() + 1) +
+                         "): ");
 
-        int dropChoice = ui->readInt();
+        int dropChoice;
+        if (player.getIsComputer()) {
+            dropChoice = (rand() % (hand.size() + 1)) + 1;
+            ui->printMessage(to_string(dropChoice) + "\n");
+        } else {
+            dropChoice = ui->readInt();
+        }
 
         if (dropChoice >= 1 && dropChoice <= static_cast<int>(hand.size())) {
             SkillCard* toDiscard = hand[dropChoice - 1];
@@ -367,7 +426,8 @@ void Game::handleCardDrop(Player& player, SkillCard* newCard) {
             skillDeck->discard(newCard);
             ui->printMessage(newCard->getName() + " (baru) telah dibuang.\n");
         }
-        ui->printMessage("Sekarang kamu memiliki " + to_string(player.getHand().size()) + " kartu di tangan.\n");
+        ui->printMessage("Sekarang kamu memiliki " + to_string(player.getHand().size()) +
+                         " kartu di tangan.\n");
     }
 }
 

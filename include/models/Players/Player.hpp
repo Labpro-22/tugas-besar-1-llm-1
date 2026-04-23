@@ -22,6 +22,7 @@ private:
     PlayerStatus status;
     int position;
     int jailTurns;
+    bool isComputer;
 
     std::vector<SkillCard*> hand;
     std::vector<PropertyTile*> properties;
@@ -33,7 +34,7 @@ private:
     // Active card-effect state
     int discountPercentage; ///< 0 = no active discount
     int discountTurnsLeft;
-    int shieldTurnsLeft; ///< 0 = not shielded
+    int shieldTurnsLeft;   ///< 0 = not shielded
     bool getOutOfJailCard; ///< true if player has a "Bebas dari Penjara" card
 
 public:
@@ -57,6 +58,9 @@ public:
     int getConsecutiveDoubles() const;
     const std::vector<SkillCard*>& getHand() const;
     const std::vector<PropertyTile*>& getProperties() const;
+
+    bool getIsComputer() const;
+    void setIsComputer(bool value);
 
     // ── Wealth helpers ─────────────────────────────────────────────────────────
     /// @brief Cash on hand only.

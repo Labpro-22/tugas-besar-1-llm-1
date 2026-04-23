@@ -10,10 +10,9 @@ using namespace std;
 // ── Constructor / Destructor ──────────────────────────────────────────────────
 
 Player::Player(int id, const string& username)
-    : id(id), username(username), money(0), status(PlayerStatus::ACTIVE),
-      position(0), jailTurns(0), hasUsedSkillThisTurn(false), hasRolledDice(false),
-      consecutiveDoubles(0), discountPercentage(0), discountTurnsLeft(0),
-      shieldTurnsLeft(0), getOutOfJailCard(false) {}
+    : id(id), username(username), money(0), status(PlayerStatus::ACTIVE), position(0), jailTurns(0),
+      isComputer(false), hasUsedSkillThisTurn(false), hasRolledDice(false), consecutiveDoubles(0),
+      discountPercentage(0), discountTurnsLeft(0), shieldTurnsLeft(0), getOutOfJailCard(false) {}
 
 Player::~Player() {}
 
@@ -75,6 +74,14 @@ const vector<PropertyTile*>& Player::getProperties() const {
     return properties;
 }
 
+bool Player::getIsComputer() const {
+    return isComputer;
+}
+
+void Player::setIsComputer(bool value) {
+    isComputer = value;
+}
+
 // ── Wealth helpers ────────────────────────────────────────────────────────────
 
 int Player::getLiquidWealth() const {
@@ -93,7 +100,8 @@ int Player::getTotalWealth() const {
     int total = money + getPropertyValue();
     for (const auto* prop : properties) {
         const auto* street = dynamic_cast<const StreetTile*>(prop);
-        if (!street) continue;
+        if (!street)
+            continue;
         int level = street->getPropertyLevel();
         if (level >= 1 && level <= 4) {
             total += level * street->getHousePrice();
@@ -169,7 +177,8 @@ void Player::releaseFromJail() {
 // ── Property management ───────────────────────────────────────────────────────
 
 void Player::addProperty(PropertyTile* property) {
-    if (!property) return;
+    if (!property)
+        return;
     if (find(properties.begin(), properties.end(), property) == properties.end()) {
         properties.push_back(property);
     }
@@ -193,7 +202,8 @@ vector<ColorGroup> Player::getMonopolyGroups() const {
     vector<ColorGroup> monopolies;
     for (const auto* prop : properties) {
         const auto* street = dynamic_cast<const StreetTile*>(prop);
-        if (!street || !street->isMonopolyOwned()) continue;
+        if (!street || !street->isMonopolyOwned())
+            continue;
         ColorGroup g = street->getColorGroup();
         if (find(monopolies.begin(), monopolies.end(), g) == monopolies.end()) {
             monopolies.push_back(g);
@@ -253,7 +263,6 @@ void Player::tickShield() {
 bool Player::isShielded() const {
     return shieldTurnsLeft > 0;
 }
-
 
 bool Player::hasJailFreeCard() const {
     return getOutOfJailCard;

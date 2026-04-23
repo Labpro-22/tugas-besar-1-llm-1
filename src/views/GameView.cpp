@@ -60,7 +60,7 @@ void GameView::displayMainMenu() const {
     cout << "Pilih (1/2/3): ";
 }
 
-vector<string> GameView::promptPlayerSetup() {
+vector<pair<string, bool>> GameView::promptPlayerSetup() {
     int count = 0;
     while (true) {
         cout << "Jumlah pemain (2-4): ";
@@ -72,32 +72,50 @@ vector<string> GameView::promptPlayerSetup() {
         cin.ignore(10000, '\n');
     }
 
-    vector<string> names(count);
+    vector<pair<string, bool>> results(count);
     for (int i = 0; i < count; ++i) {
+        string currentName;
         while (true) {
             cout << "Nama pemain " << (i + 1) << ": ";
-            cin >> names[i];
+            cin >> currentName;
 
             bool duplicate = false;
             for (int j = 0; j < i; ++j) {
-                if (names[j] == names[i]) {
+                if (results[j].first == currentName) {
                     duplicate = true;
                     break;
                 }
             }
             if (duplicate) {
-                cout << "Nama " << names[i] << " sudah digunakan. Masukkan nama lain.\n";
+                cout << "Nama " << currentName << " sudah digunakan. Masukkan nama lain.\n";
             } else {
                 break;
             }
         }
+
+        bool isCom = false;
+        while (true) {
+            cout << "Apakah " << (i + 1) << " sebuah COM? (y/n) ";
+            string ans;
+            cin >> ans;
+            if (ans == "y" || ans == "Y") {
+                isCom = true;
+                break;
+            } else if (ans == "n" || ans == "N") {
+                isCom = false;
+                break;
+            } else {
+                cout << "Input tidak valid. Masukkan y atau n.\n";
+            }
+        }
+        results[i] = make_pair(currentName, isCom);
     }
     cin.ignore();
-    return names;
+    return results;
 }
 
-void GameView::displayBoard(const Board& board, const vector<Player*>& players,
-                            int currentTurn, int maxTurn) const {
+void GameView::displayBoard(const Board& board, const vector<Player*>& players, int currentTurn,
+                            int maxTurn) const {
     int totalTiles = board.getTotalTiles();
     if (totalTiles == 0) {
         cout << "[Board kosong]\n";
@@ -514,14 +532,19 @@ bool GameView::promptBuyProperty(Player& player, PropertyTile& tile) {
     cout << "Uang kamu saat ini: M" << player.getMoney() << "\n";
     cout << "Apakah kamu ingin membeli properti ini seharga M" << tile.getPrice() << "? (y/n): ";
     char c;
-    cin >> c;
-    cin.ignore();
+    if (player.getIsComputer()) {
+        bool y = player.getMoney() > tile.getPrice() * 1.5 && (rand() % 2 == 0);
+        c = y ? 'y' : 'n';
+        cout << c << "\n";
+    } else {
+        cin >> c;
+        cin.ignore();
+    }
     return (c == 'y' || c == 'Y');
 }
 
-PropertyTile* GameView::promptSelectOpponentProperty(Player& player,
-                                                      const vector<Player*>& players,
-                                                      const Board& board) {
+PropertyTile* GameView::promptSelectOpponentProperty(Player& player, const vector<Player*>& players,
+                                                     const Board& board) {
     (void)board;
     vector<pair<Player*, PropertyTile*>> opts;
     for (auto* p : players) {
@@ -547,8 +570,13 @@ PropertyTile* GameView::promptSelectOpponentProperty(Player& player,
     }
     cout << "0. Batal\nPilih: ";
     int c = 0;
-    cin >> c;
-    cin.ignore();
+    if (player.getIsComputer()) {
+        c = rand() % (opts.size() + 1);
+        cout << c << "\n";
+    } else {
+        cin >> c;
+        cin.ignore();
+    }
     if (c < 1 || c > static_cast<int>(opts.size()))
         return nullptr;
     return opts[c - 1].second;
@@ -578,8 +606,13 @@ Player* GameView::promptSelectTarget(Player& player, const vector<Player*>& play
     }
     cout << "0. Batal\nPilih: ";
     int c = 0;
-    cin >> c;
-    cin.ignore();
+    if (player.getIsComputer()) {
+        c = rand() % (targets.size() + 1);
+        cout << c << "\n";
+    } else {
+        cin >> c;
+        cin.ignore();
+    }
     if (c < 1 || c > static_cast<int>(targets.size()))
         return nullptr;
     return targets[c - 1];
@@ -592,8 +625,13 @@ int GameView::promptTaxChoice(Player& player, int flat, int pct) {
     cout << "2. Bayar " << pct << "% dari total kekayaan\n";
     cout << "Pilihan (1/2): ";
     int choice = 1;
-    cin >> choice;
-    cin.ignore();
+    if (player.getIsComputer()) {
+        choice = (rand() % 2) + 1;
+        cout << choice << "\n";
+    } else {
+        cin >> choice;
+        cin.ignore();
+    }
     if (choice == 2) {
         int totalWealth = player.getTotalWealth();
         int percentageAmount = totalWealth * pct / 100;
@@ -616,8 +654,13 @@ int GameView::promptTileIndex(Player& player, const Board& board) {
     }
     cout << "Masukkan nomor petak (0-" << (board.getTotalTiles() - 1) << "): ";
     int idx = 0;
-    cin >> idx;
-    cin.ignore();
+    if (player.getIsComputer()) {
+        idx = rand() % board.getTotalTiles();
+        cout << idx << "\n";
+    } else {
+        cin >> idx;
+        cin.ignore();
+    }
     if (idx < 0 || idx >= board.getTotalTiles())
         idx = 0;
     return idx;
@@ -642,8 +685,13 @@ void GameView::promptFestivalSelection(Player& player) {
     }
     cout << "Masukkan nomor properti (0 untuk skip): ";
     int choice = 0;
-    cin >> choice;
-    cin.ignore();
+    if (player.getIsComputer()) {
+        choice = rand() % (props.size() + 1);
+        cout << choice << "\n";
+    } else {
+        cin >> choice;
+        cin.ignore();
+    }
     if (choice < 1 || choice > static_cast<int>(props.size())) {
         cout << "Efek festival tidak diterapkan.\n";
         return;
@@ -663,12 +711,22 @@ void GameView::promptFestivalSelection(Player& player) {
 }
 
 pair<bool, int> GameView::promptAuctionBid(Player& player, int currentBid,
-                                            const PropertyTile& tile) {
+                                           const PropertyTile& tile) {
     while (true) {
         cout << "Giliran: " << player.getUsername() << "\n";
         cout << "Aksi (PASS / BID <jumlah>) > ";
         string line;
-        getline(cin, line);
+        if (player.getIsComputer()) {
+            if (currentBid < tile.getPrice() * 1.5 && player.getMoney() > currentBid + 500 &&
+                rand() % 2 == 0) {
+                line = "BID " + to_string(currentBid + 10);
+            } else {
+                line = "PASS";
+            }
+            cout << line << "\n";
+        } else {
+            getline(cin, line);
+        }
         istringstream iss(line);
         string cmd;
         iss >> cmd;
@@ -693,7 +751,7 @@ pair<bool, int> GameView::promptAuctionBid(Player& player, int currentBid,
 }
 
 void GameView::runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor,
-                                    const vector<Player*>& players, const Board& board) {
+                                   const vector<Player*>& players, const Board& board) {
     (void)players;
     (void)board;
     cout << "\nKamu tidak dapat membayar M" << amountNeeded << "!\n";
@@ -747,8 +805,13 @@ void GameView::runLiquidationPanel(Player& debtor, int amountNeeded, Player* cre
         cout << "Pilih aksi (0 jika sudah cukup): ";
 
         int choice = 0;
-        cin >> choice;
-        cin.ignore();
+        if (debtor.getIsComputer()) {
+            choice = (rand() % (sellable.size() + mortgageable.size())) + 1;
+            cout << choice << "\n";
+        } else {
+            cin >> choice;
+            cin.ignore();
+        }
 
         if (choice == 0) {
             cout << "Kamu belum boleh keluar dari panel likuidasi sebelum kewajiban terpenuhi.\n";

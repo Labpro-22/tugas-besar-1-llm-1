@@ -3,6 +3,8 @@
 #include "GameView.hpp"
 #include "Player.hpp"
 #include <algorithm>
+#include <cstdlib>
+#include <ctime>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -77,6 +79,7 @@ static void runEndScreen(GameView& view, const Game& game) {
 }
 
 int main() {
+    srand(static_cast<unsigned int>(time(nullptr)));
     GameView view;
     Game game;
     game.setUserInteraction(&view);

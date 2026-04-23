@@ -4,8 +4,8 @@
 #include "Dice.hpp"
 #include "Exceptions.hpp"
 #include "GameConfig.hpp"
-#include "IUserInteraction.hpp"
 #include "IGameContext.hpp"
+#include "IUserInteraction.hpp"
 #include "Logger.hpp"
 #include "Player.hpp"
 #include "PropertyManager.hpp"
@@ -169,8 +169,8 @@ void CommandHandler::handleLemparDadu(Player& player, Dice& dice, IGameContext& 
     auto dv = dice.getDiceValues();
     if (ui) {
         ui->printMessage("\nMengocok dadu...\n");
-        ui->printMessage("Hasil: " + to_string(dv.first) + " + " + to_string(dv.second) +
-                         " = " + to_string(lastDiceTotal) + "\n");
+        ui->printMessage("Hasil: " + to_string(dv.first) + " + " + to_string(dv.second) + " = " +
+                         to_string(lastDiceTotal) + "\n");
     }
 
     logger.logEvent(LogLevel::INFO, ctx.getCurrentTurn(), player.getUsername(), "DADU",
@@ -218,8 +218,14 @@ void CommandHandler::handleGunakanKemampuan(Player& player, IGameContext& ctx,
     }
 
     int choice = 0;
-    if (ui)
-        choice = ui->readInt();
+    if (player.getIsComputer()) {
+        choice = (rand() % hand.size()) + 1;
+        if (ui)
+            ui->printMessage(to_string(choice) + "\n");
+    } else {
+        if (ui)
+            choice = ui->readInt();
+    }
     if (choice < 1 || choice > static_cast<int>(hand.size())) {
         if (choice == 0)
             return;

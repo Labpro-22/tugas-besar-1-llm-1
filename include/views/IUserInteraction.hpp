@@ -26,7 +26,7 @@ public:
     virtual int readInt() = 0;
 
     // ── Setup ──────────────────────────────────────────────────────────────────
-    virtual std::vector<std::string> promptPlayerSetup() = 0;
+    virtual std::vector<std::pair<std::string, bool>> promptPlayerSetup() = 0;
 
     // ── Board / state display ──────────────────────────────────────────────────
     virtual void displayBoard(const Board& board, const std::vector<Player*>& players,
@@ -51,9 +51,7 @@ public:
     virtual int promptTileIndex(Player& player, const Board& board) = 0;
     virtual void promptFestivalSelection(Player& player) = 0;
     virtual std::pair<bool, int> promptAuctionBid(Player& player, int currentBid,
-                                                   const PropertyTile& tile) = 0;
+                                                  const PropertyTile& tile) = 0;
     virtual void runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor,
-                                     const std::vector<Player*>& players,
-                                     const Board& board) = 0;
-
+                                     const std::vector<Player*>& players, const Board& board) = 0;
 };

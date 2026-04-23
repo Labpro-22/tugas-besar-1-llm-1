@@ -15,7 +15,8 @@
 
 using namespace std;
 
-void PropertyManager::mortgage(Player& player, Board& board, int currentTurn, Logger& logger, IUserInteraction* ui) {
+void PropertyManager::mortgage(Player& player, Board& board, int currentTurn, Logger& logger,
+                               IUserInteraction* ui) {
     vector<PropertyTile*> mortgageable;
     for (PropertyTile* prop : player.getProperties()) {
         if (prop->getStatus() == PropertyStatus::OWNED)
@@ -29,15 +30,23 @@ void PropertyManager::mortgage(Player& player, Board& board, int currentTurn, Lo
     if (ui) {
         string msg = "=== Properti yang Dapat Digadaikan ===\n";
         for (int i = 0; i < static_cast<int>(mortgageable.size()); i++) {
-            msg += to_string(i + 1) + ". " + mortgageable[i]->getName() + " (" + mortgageable[i]->getCode()
-                 + ")  Nilai Gadai: M" + to_string(mortgageable[i]->getMortgageValue()) + "\n";
+            msg += to_string(i + 1) + ". " + mortgageable[i]->getName() + " (" +
+                   mortgageable[i]->getCode() + ")  Nilai Gadai: M" +
+                   to_string(mortgageable[i]->getMortgageValue()) + "\n";
         }
         msg += "Pilih nomor properti (0 untuk batal): ";
         ui->printMessage(msg);
     }
 
     int choice = 0;
-    if (ui) choice = ui->readInt();
+    if (player.getIsComputer()) {
+        choice = rand() % (mortgageable.size() + 1);
+        if (ui && choice > 0)
+            ui->printMessage(to_string(choice) + "\n");
+    } else {
+        if (ui)
+            choice = ui->readInt();
+    }
     if (choice < 1 || choice > static_cast<int>(mortgageable.size())) {
         if (choice == 0)
             return;
@@ -61,16 +70,17 @@ void PropertyManager::mortgage(Player& player, Board& board, int currentTurn, Lo
         }
         if (hasBuildings) {
             if (ui) {
-                string msg = selected->getName()
-                     + " tidak dapat digadaikan! Masih ada bangunan di color group ["
-                     + colorGroupToString(cg) + "].\n";
+                string msg = selected->getName() +
+                             " tidak dapat digadaikan! Masih ada bangunan di color group [" +
+                             colorGroupToString(cg) + "].\n";
                 msg += "Jual semua bangunan color group [" + colorGroupToString(cg) + "]? (y/n): ";
                 ui->printMessage(msg);
             }
             if (ui) {
                 string resp = ui->readLine();
                 if (resp.empty() || (resp[0] != 'y' && resp[0] != 'Y')) {
-                    if (ui) ui->printMessage("Dibatalkan.\n");
+                    if (ui)
+                        ui->printMessage("Dibatalkan.\n");
                     return;
                 }
             }
@@ -87,8 +97,8 @@ void PropertyManager::mortgage(Player& player, Board& board, int currentTurn, Lo
                 s->setPropertyLevel(0);
                 player += refund;
                 if (ui) {
-                    ui->printMessage("Bangunan " + s->getName() + " terjual. Kamu menerima M" + to_string(refund)
-                         + ".\n");
+                    ui->printMessage("Bangunan " + s->getName() + " terjual. Kamu menerima M" +
+                                     to_string(refund) + ".\n");
                 }
                 logger.logEvent(LogLevel::INFO, currentTurn, player.getUsername(), "JUAL_BANGUNAN",
                                 "Jual bangunan " + s->getName() + " M" + to_string(refund));
@@ -99,8 +109,8 @@ void PropertyManager::mortgage(Player& player, Board& board, int currentTurn, Lo
     selected->mortgage();
     player += selected->getMortgageValue();
     if (ui) {
-        ui->printMessage(selected->getName() + " berhasil digadaikan. Kamu menerima M"
-             + to_string(selected->getMortgageValue()) + " dari Bank.\n");
+        ui->printMessage(selected->getName() + " berhasil digadaikan. Kamu menerima M" +
+                         to_string(selected->getMortgageValue()) + " dari Bank.\n");
         ui->printMessage("Uang kamu sekarang: M" + to_string(player.getMoney()) + "\n");
         ui->printMessage("Catatan: Sewa tidak dapat dipungut dari properti yang digadaikan.\n");
     }
@@ -109,7 +119,8 @@ void PropertyManager::mortgage(Player& player, Board& board, int currentTurn, Lo
                         to_string(selected->getMortgageValue()));
 }
 
-void PropertyManager::redeem(Player& player, int currentTurn, Logger& logger, IUserInteraction* ui) {
+void PropertyManager::redeem(Player& player, int currentTurn, Logger& logger,
+                             IUserInteraction* ui) {
     vector<PropertyTile*> mortgaged;
     for (PropertyTile* prop : player.getProperties()) {
         if (prop->isMortgaged())
@@ -123,8 +134,9 @@ void PropertyManager::redeem(Player& player, int currentTurn, Logger& logger, IU
     if (ui) {
         string msg = "=== Properti yang Sedang Digadaikan ===\n";
         for (int i = 0; i < static_cast<int>(mortgaged.size()); i++) {
-            msg += to_string(i + 1) + ". " + mortgaged[i]->getName() + " (" + mortgaged[i]->getCode()
-                 + ")  [M]  Harga Tebus: M" + to_string(mortgaged[i]->getPrice()) + "\n";
+            msg += to_string(i + 1) + ". " + mortgaged[i]->getName() + " (" +
+                   mortgaged[i]->getCode() + ")  [M]  Harga Tebus: M" +
+                   to_string(mortgaged[i]->getPrice()) + "\n";
         }
         msg += "Uang kamu saat ini: M" + to_string(player.getMoney()) + "\n";
         msg += "Pilih nomor properti (0 untuk batal): ";
@@ -132,7 +144,22 @@ void PropertyManager::redeem(Player& player, int currentTurn, Logger& logger, IU
     }
 
     int choice = 0;
-    if (ui) choice = ui->readInt();
+    if (player.getIsComputer()) {
+        vector<int> affordable;
+        for (size_t i = 0; i < mortgaged.size(); i++) {
+            if (player.getMoney() >= mortgaged[i]->getPrice()) {
+                affordable.push_back(i + 1);
+            }
+        }
+        if (!affordable.empty() && (rand() % 2 == 0)) {
+            choice = affordable[rand() % affordable.size()];
+        }
+        if (ui && choice > 0)
+            ui->printMessage(to_string(choice) + "\n");
+    } else {
+        if (ui)
+            choice = ui->readInt();
+    }
     if (choice < 1 || choice > static_cast<int>(mortgaged.size())) {
         if (choice == 0)
             return;
@@ -149,15 +176,16 @@ void PropertyManager::redeem(Player& player, int currentTurn, Logger& logger, IU
     player -= redeemPrice;
     selected->unmortgage();
     if (ui) {
-        ui->printMessage(selected->getName() + " berhasil ditebus! Kamu membayar M" + to_string(redeemPrice)
-             + " ke Bank.\n");
+        ui->printMessage(selected->getName() + " berhasil ditebus! Kamu membayar M" +
+                         to_string(redeemPrice) + " ke Bank.\n");
         ui->printMessage("Uang kamu sekarang: M" + to_string(player.getMoney()) + "\n");
     }
     logger.logEvent(LogLevel::INFO, currentTurn, player.getUsername(), "TEBUS",
                     "Tebus " + selected->getName() + " M" + to_string(redeemPrice));
 }
 
-void PropertyManager::build(Player& player, Board& board, int currentTurn, Logger& logger, IUserInteraction* ui) {
+void PropertyManager::build(Player& player, Board& board, int currentTurn, Logger& logger,
+                            IUserInteraction* ui) {
     vector<ColorGroup> monoGroups = player.getMonopolyGroups();
     if (monoGroups.empty()) {
         throw GameStateException(
@@ -199,8 +227,8 @@ void PropertyManager::build(Player& player, Board& board, int currentTurn, Logge
                 int lvl = s->getPropertyLevel();
                 string lvlStr = (lvl == 5) ? "Hotel" : to_string(lvl) + " rumah";
                 int price = (lvl >= 4) ? s->getHotelPrice() : s->getHousePrice();
-                msg += "  - " + s->getName() + " (" + s->getCode() + "): " + lvlStr
-                     + " (Harga bangun: M" + to_string(price) + ")\n";
+                msg += "  - " + s->getName() + " (" + s->getCode() + "): " + lvlStr +
+                       " (Harga bangun: M" + to_string(price) + ")\n";
             }
         }
         msg += "Uang kamu saat ini: M" + to_string(player.getMoney()) + "\n";
@@ -209,7 +237,14 @@ void PropertyManager::build(Player& player, Board& board, int currentTurn, Logge
     }
 
     int groupChoice = 0;
-    if (ui) groupChoice = ui->readInt();
+    if (player.getIsComputer()) {
+        groupChoice = (rand() % buildableGroups.size()) + 1;
+        if (ui)
+            ui->printMessage(to_string(groupChoice) + "\n");
+    } else {
+        if (ui)
+            groupChoice = ui->readInt();
+    }
     if (groupChoice < 1 || groupChoice > static_cast<int>(buildableGroups.size())) {
         if (groupChoice == 0)
             return;
@@ -253,8 +288,8 @@ void PropertyManager::build(Player& player, Board& board, int currentTurn, Logge
             int lvl = s->getPropertyLevel();
             string lvlStr = (lvl == 5) ? "Hotel" : to_string(lvl) + " rumah";
             bool canBuild = find(buildable.begin(), buildable.end(), s) != buildable.end();
-            msg += "- " + s->getName() + " (" + s->getCode() + "): " + lvlStr
-                 + (canBuild ? "  <- dapat dibangun" : "") + "\n";
+            msg += "- " + s->getName() + " (" + s->getCode() + "): " + lvlStr +
+                   (canBuild ? "  <- dapat dibangun" : "") + "\n";
         }
 
         msg += "\nPetak yang dapat dibangun:\n";
@@ -263,14 +298,31 @@ void PropertyManager::build(Player& player, Board& board, int currentTurn, Logge
             int lvl = s->getPropertyLevel();
             string action = (lvl == 4) ? "Upgrade ke Hotel" : "Bangun 1 Rumah";
             int cost = (lvl >= 4) ? s->getHotelPrice() : s->getHousePrice();
-            msg += to_string(i + 1) + ". " + s->getName() + " - " + action + " (M" + to_string(cost) + ")\n";
+            msg += to_string(i + 1) + ". " + s->getName() + " - " + action + " (M" +
+                   to_string(cost) + ")\n";
         }
         msg += "Pilih petak (0 untuk batal): ";
         ui->printMessage(msg);
     }
 
     int buildChoice = 0;
-    if (ui) buildChoice = ui->readInt();
+    if (player.getIsComputer()) {
+        vector<int> affordable;
+        for (size_t i = 0; i < buildable.size(); i++) {
+            int cost = (buildable[i]->getPropertyLevel() >= 4) ? buildable[i]->getHotelPrice()
+                                                               : buildable[i]->getHousePrice();
+            if (player.getMoney() >= cost)
+                affordable.push_back(i + 1);
+        }
+        if (!affordable.empty()) {
+            buildChoice = affordable[rand() % affordable.size()];
+        }
+        if (ui && buildChoice > 0)
+            ui->printMessage(to_string(buildChoice) + "\n");
+    } else {
+        if (ui)
+            buildChoice = ui->readInt();
+    }
     if (buildChoice < 1 || buildChoice > static_cast<int>(buildable.size())) {
         if (buildChoice == 0)
             return;
@@ -289,13 +341,18 @@ void PropertyManager::build(Player& player, Board& board, int currentTurn, Logge
     string logDetail;
     if (lvl == 4) {
         toBuild->buildHotel();
-        if (ui) ui->printMessage(toBuild->getName() + " di-upgrade ke Hotel! Biaya: M" + to_string(cost) + "\n");
+        if (ui)
+            ui->printMessage(toBuild->getName() + " di-upgrade ke Hotel! Biaya: M" +
+                             to_string(cost) + "\n");
         logDetail = "Hotel di " + toBuild->getName();
     } else {
         toBuild->buildHouse();
-        if (ui) ui->printMessage("1 rumah dibangun di " + toBuild->getName() + ". Biaya: M" + to_string(cost) + "\n");
+        if (ui)
+            ui->printMessage("1 rumah dibangun di " + toBuild->getName() + ". Biaya: M" +
+                             to_string(cost) + "\n");
         logDetail = "Rumah L" + to_string(lvl + 1) + " di " + toBuild->getName();
     }
-    if (ui) ui->printMessage("Uang tersisa: M" + to_string(player.getMoney()) + "\n");
+    if (ui)
+        ui->printMessage("Uang tersisa: M" + to_string(player.getMoney()) + "\n");
     logger.logEvent(LogLevel::INFO, currentTurn, player.getUsername(), "BANGUN", logDetail);
 }
