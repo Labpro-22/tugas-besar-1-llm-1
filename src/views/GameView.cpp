@@ -1,5 +1,6 @@
 #include "GameView.hpp"
 #include "ColorGroup.hpp"
+#include "Logger.hpp"
 #include "StreetTile.hpp"
 #include <algorithm>
 #include <iostream>
@@ -605,20 +606,21 @@ PropertyTile* GameView::promptSelectOpponentProperty(Player& player, const vecto
         if (p == &player || p->getStatus() == PlayerStatus::BANKRUPT)
             continue;
         for (PropertyTile* prop : p->getProperties()) {
-            auto* s = dynamic_cast<StreetTile*>(prop);
-            if (s && s->getPropertyLevel() > 0)
-                opts.push_back({p, prop});
+            opts.push_back({p, prop});
         }
     }
     if (opts.empty()) {
-        cout << "Tidak ada properti lawan yang memiliki bangunan.\n";
+        cout << "Tidak ada properti lawan yang dapat dipilih.\n";
         return nullptr;
     }
-    cout << "=== Pilih Properti Lawan untuk Dihancurkan ===\n";
+    cout << "=== Pilih Properti Lawan ===\n";
     for (int i = 0; i < static_cast<int>(opts.size()); i++) {
         auto* s = dynamic_cast<StreetTile*>(opts[i].second);
         int lvl = s ? s->getPropertyLevel() : 0;
-        string lvlStr = (lvl == 5) ? "Hotel" : to_string(lvl) + " rumah";
+        string lvlStr = "Tanpa bangunan";
+        if (s) {
+            lvlStr = (lvl == 5) ? "Hotel" : to_string(lvl) + " rumah";
+        }
         cout << (i + 1) << ". " << opts[i].second->getName() << " (" << opts[i].second->getCode()
              << ") milik " << opts[i].first->getUsername() << " - " << lvlStr << "\n";
     }
@@ -805,9 +807,9 @@ pair<bool, int> GameView::promptAuctionBid(Player& player, int currentBid,
 }
 
 bool GameView::runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor,
-                                   const vector<Player*>& players, const Board& board) {
+                                   const vector<Player*>& players, const Board& board,
+                                   int currentTurn, Logger& logger) {
     (void)players;
-    (void)board;
     cout << "\nKamu tidak dapat membayar M" << amountNeeded << "!\n";
     cout << "Uang kamu       : M" << debtor.getMoney() << "\n";
     cout << "Total kewajiban : M" << amountNeeded << "\n";
@@ -834,6 +836,49 @@ bool GameView::runLiquidationPanel(Player& debtor, int amountNeeded, Player* cre
             cout << "Tidak ada aset yang dapat dilikuidasi.\n";
             return false;
         }
+
+        auto liquidateColorGroupBuildings = [&](StreetTile* selectedStreet) {
+            if (!selectedStreet)
+                return;
+
+            ColorGroup cg = selectedStreet->getColorGroup();
+            vector<StreetTile*> groupStreets;
+            bool hasBuildings = false;
+            for (int i = 0; i < board.getTotalTiles(); ++i) {
+                auto* street = dynamic_cast<StreetTile*>(board.getTileAt(i));
+                if (street && street->getOwner() == &debtor && street->getColorGroup() == cg) {
+                    groupStreets.push_back(street);
+                    if (street->getPropertyLevel() > 0) {
+                        hasBuildings = true;
+                    }
+                }
+            }
+            if (!hasBuildings)
+                return;
+
+            cout << "Masih ada bangunan di color group [" << colorGroupToString(cg)
+                 << "]. Seluruh bangunan pada color group tersebut dijual terlebih dahulu.\n";
+            for (auto* street : groupStreets) {
+                int lvl = street->getPropertyLevel();
+                if (lvl == 0)
+                    continue;
+
+                int refund = 0;
+                if (lvl == 5) {
+                    refund = (street->getHotelPrice() + 4 * street->getHousePrice()) / 2;
+                } else {
+                    refund = lvl * street->getHousePrice() / 2;
+                }
+                street->setPropertyLevel(0);
+                debtor += refund;
+                cout << "Bangunan " << street->getName() << " terjual. Kamu menerima M" << refund
+                     << ".\n";
+                logger.logEvent(LogLevel::INFO, currentTurn, debtor.getUsername(),
+                                "JUAL_BANGUNAN",
+                                "Likuidasi bangunan " + street->getName() + " M" +
+                                    to_string(refund));
+            }
+        };
 
         cout << "[Jual ke Bank]\n";
         for (int i = 0; i < static_cast<int>(sellable.size()); i++) {
@@ -886,17 +931,25 @@ bool GameView::runLiquidationPanel(Player& debtor, int amountNeeded, Player* cre
                 s->setPropertyLevel(0);
             }
             debtor.removeProperty(prop);
+            prop->setFestivalState(1, 0);
             prop->releaseToBank();
             debtor += sellVal;
             cout << prop->getName() << " terjual ke Bank. Kamu menerima M" << sellVal << ".\n";
+            logger.logEvent(LogLevel::INFO, currentTurn, debtor.getUsername(), "LIKUIDASI_JUAL",
+                            prop->getCode() + " M" + to_string(sellVal));
         } else {
             int mIdx = choice - static_cast<int>(sellable.size()) - 1;
             if (mIdx >= 0 && mIdx < static_cast<int>(mortgageable.size())) {
                 auto* prop = mortgageable[mIdx];
+                auto* street = dynamic_cast<StreetTile*>(prop);
+                liquidateColorGroupBuildings(street);
                 prop->mortgage();
                 debtor += prop->getMortgageValue();
                 cout << prop->getName() << " digadaikan. Kamu menerima M"
                      << prop->getMortgageValue() << ".\n";
+                logger.logEvent(LogLevel::INFO, currentTurn, debtor.getUsername(), "GADAI",
+                                "Likuidasi gadai " + prop->getCode() + " M" +
+                                    to_string(prop->getMortgageValue()));
             }
         }
     }

@@ -65,6 +65,20 @@ static unique_ptr<SkillCard> extractCardFromStream(istringstream& ss, const stri
     return nullptr;
 }
 
+static string buildingLevelToToken(int level) {
+    return (level == 5) ? "H" : to_string(level);
+}
+
+static int buildingLevelFromToken(const string& token) {
+    if (token == "H" || token == "h")
+        return 5;
+    try {
+        return stoi(token);
+    } catch (...) {
+        return 0;
+    }
+}
+
 // ── Save ──────────────────────────────────────────────────────────────────────
 
 static const string SAVE_CONFIG_PREFIX = "CONFIG_DIR ";
@@ -113,7 +127,6 @@ void GameSaveLoader::save(const Game& game, const string& filename) const {
         for (const SkillCard* card : hand) {
             out << " " << cardToToken(card);
         }
-        // Save jail free card flag
         out << " " << (p->hasJailFreeCard() ? 1 : 0);
         out << "\n";
     }
@@ -177,7 +190,8 @@ void GameSaveLoader::save(const Game& game, const string& filename) const {
         }
 
         out << prop->getCode() << " " << typeStr << " " << owner << " " << propStatus << " "
-            << prop->getFestivalMultiplier() << " " << prop->getFestivalDur() << " " << level;
+            << prop->getFestivalMultiplier() << " " << prop->getFestivalDur() << " "
+            << buildingLevelToToken(level);
 
         if (i < properties.size() - 1)
             out << "\n";
@@ -202,11 +216,7 @@ void GameSaveLoader::save(const Game& game, const string& filename) const {
 
     out << deckCards.size();
     for (const SkillCard* c : deckCards) {
-        string token = cardToToken(c);
-        istringstream ss(token);
-        string typeOnly;
-        ss >> typeOnly; // State deck ignores parameters! Spec says <JENIS_KARTU_1> ...
-        out << " " << typeOnly;
+        out << " " << cardToToken(c);
     }
     out << "\n";
 
@@ -310,10 +320,9 @@ void GameSaveLoader::load(Game& game, const string& filename) const {
                 }
             }
         }
-        // Load jail free card flag (if present)
-        int jailFreeFlag = 0;
-        if (ps >> jailFreeFlag) {
-            player->setJailFreeCard(jailFreeFlag != 0);
+        int hasJailFreeCard = 0;
+        if (ps >> hasJailFreeCard) {
+            player->setJailFreeCard(hasJailFreeCard != 0);
         }
         game.players.push_back(move(player));
     }
@@ -354,11 +363,12 @@ void GameSaveLoader::load(Game& game, const string& filename) const {
     if (!(propsStream >> numProps))
         numProps = 0;
 
-    string code, typeStr, ownerUsername, propStatus;
-    int fMult, fDur, level;
+    string code, typeStr, ownerUsername, propStatus, buildingToken;
+    int fMult, fDur;
 
     // The rest of the first property line
-    if (propsStream >> code >> typeStr >> ownerUsername >> propStatus >> fMult >> fDur >> level) {
+    if (propsStream >> code >> typeStr >> ownerUsername >> propStatus >> fMult >> fDur >>
+        buildingToken) {
         auto* tile = dynamic_cast<PropertyTile*>(game.board->getTileByCode(code));
         if (tile) {
             Player* owner = nullptr;
@@ -380,7 +390,7 @@ void GameSaveLoader::load(Game& game, const string& filename) const {
 
             tile->setFestivalState(fMult, fDur);
             if (auto* s = dynamic_cast<StreetTile*>(tile))
-                s->setPropertyLevel(level);
+                s->setPropertyLevel(buildingLevelFromToken(buildingToken));
 
             if (owner && propStatus != "BANK")
                 owner->addProperty(tile);
@@ -391,7 +401,8 @@ void GameSaveLoader::load(Game& game, const string& filename) const {
         if (!getline(in, line))
             break;
         istringstream ps(line);
-        if (ps >> code >> typeStr >> ownerUsername >> propStatus >> fMult >> fDur >> level) {
+        if (ps >> code >> typeStr >> ownerUsername >> propStatus >> fMult >> fDur >>
+            buildingToken) {
             auto* tile = dynamic_cast<PropertyTile*>(game.board->getTileByCode(code));
             if (!tile)
                 continue;
@@ -415,7 +426,7 @@ void GameSaveLoader::load(Game& game, const string& filename) const {
 
             tile->setFestivalState(fMult, fDur);
             if (auto* s = dynamic_cast<StreetTile*>(tile))
-                s->setPropertyLevel(level);
+                s->setPropertyLevel(buildingLevelFromToken(buildingToken));
 
             if (owner && propStatus != "BANK")
                 owner->addProperty(tile);

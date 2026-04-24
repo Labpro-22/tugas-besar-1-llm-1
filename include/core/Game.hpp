@@ -64,6 +64,7 @@ private:
     std::vector<std::unique_ptr<SkillCard>> allSkillCards;
 
     GameConfig config;
+    std::string currentConfigDir;
     GameState state;
     Logger logger;
     int lastDiceTotal;
@@ -136,6 +137,7 @@ public:
 
     void grantProperty(Player& player, PropertyTile& tile) override;
     void initiateAuction(PropertyTile& tile) override;
+    void destroyPropertyToBank(PropertyTile& tile) override;
     void triggerBankruptcy(Player& debtor, Player* creditor, int amount) override;
     void refreshMonopolyStatus() override;
 
@@ -147,5 +149,5 @@ public:
     void promptFestivalSelection(Player& player) override;
     std::pair<bool, int> promptAuctionBid(Player& player, int currentBid,
                                           const PropertyTile& tile) override;
-    void runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor) override;
+    bool runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor) override;
 };

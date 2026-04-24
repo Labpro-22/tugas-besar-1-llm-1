@@ -75,6 +75,9 @@ public:
     /** Start auction flow for a property tile. */
     virtual void initiateAuction(PropertyTile& tile) = 0;
 
+    /** Return a property to the bank immediately (used by destructive card effects). */
+    virtual void destroyPropertyToBank(PropertyTile& tile) = 0;
+
     /**
      * @brief Trigger the bankruptcy flow.
      * @param debtor The player who cannot pay.
@@ -128,5 +131,5 @@ public:
      * @brief Run the interactive liquidation panel when a player must sell assets to cover debt.
      * After this returns, the payment is re-attempted if the player has enough money.
      */
-    virtual void runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor) = 0;
+    virtual bool runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor) = 0;
 };

@@ -50,8 +50,8 @@ BoardFactory::BuildResult BoardFactory::build(ConfigManager& cfg) {
         make_unique<ChanceCard>("Mundur 3 Petak", "Mundur 3 petak.", ChanceEffect::MOVE_BACK_3));
     chanceCards.push_back(
         make_unique<ChanceCard>("Masuk Penjara", "Masuk Penjara.", ChanceEffect::GO_TO_JAIL));
-    chanceCards.push_back(make_unique<ChanceCard>("Bebas dari Penjara",
-                                                  "Gunakan kartu ini untuk keluar dari penjara.",
+    chanceCards.push_back(make_unique<ChanceCard>("Bebas dari Penjara", "Dapat digunakan untuk "
+                                                                            "keluar dari penjara.",
                                                   ChanceEffect::GET_OUT_OF_JAIL));
 
     vector<ChanceCard*> chanceRaw;

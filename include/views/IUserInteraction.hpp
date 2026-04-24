@@ -8,6 +8,7 @@
 class Player;
 class PropertyTile;
 class Board;
+class Logger;
 
 /**
  * @brief Pure interface for all user interaction (input/output).
@@ -52,6 +53,7 @@ public:
     virtual void promptFestivalSelection(Player& player) = 0;
     virtual std::pair<bool, int> promptAuctionBid(Player& player, int currentBid,
                                                   const PropertyTile& tile) = 0;
-    virtual void runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor,
-                                     const std::vector<Player*>& players, const Board& board) = 0;
+    virtual bool runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor,
+                                     const std::vector<Player*>& players, const Board& board,
+                                     int currentTurn, Logger& logger) = 0;
 };

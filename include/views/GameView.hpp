@@ -83,6 +83,7 @@ public:
     void promptFestivalSelection(Player& player) override;
     std::pair<bool, int> promptAuctionBid(Player& player, int currentBid,
                                           const PropertyTile& tile) override;
-    void runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor,
-                             const std::vector<Player*>& players, const Board& board) override;
+    bool runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor,
+                             const std::vector<Player*>& players, const Board& board,
+                             int currentTurn, Logger& logger) override;
 };

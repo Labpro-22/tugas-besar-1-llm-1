@@ -148,6 +148,10 @@ void Game::loadGame(const string& filename) {
     GameSaveLoader loader;
     loader.load(*this, filename);
     state = GameState::PLAYING;
+    if (!players.empty()) {
+        logger.logEvent(LogLevel::INFO, getCurrentTurn(), getActivePlayer().getUsername(), "MUAT",
+                        "Muat dari " + filename + " (" + currentConfigDir + ")");
+    }
 }
 
 void Game::saveGame(const string& filename) const {
@@ -637,6 +641,23 @@ void Game::initiateAuction(PropertyTile& tile) {
     auctionManager.runAuction(tile, bidderOrder, *this);
 }
 
+void Game::destroyPropertyToBank(PropertyTile& tile) {
+    Player* owner = tile.getOwner();
+    if (!owner)
+        return;
+
+    if (auto* street = dynamic_cast<StreetTile*>(&tile)) {
+        street->setPropertyLevel(0);
+    }
+    tile.setFestivalState(1, 0);
+    owner->removeProperty(&tile);
+    tile.releaseToBank();
+    updateMonopolyStatus();
+    ui->printMessage(tile.getName() + " dihancurkan dan dikembalikan ke Bank.\n");
+    logger.logEvent(LogLevel::INFO, getCurrentTurn(), getActivePlayer().getUsername(), "DEMOLISH",
+                    tile.getCode() + " dikembalikan ke Bank");
+}
+
 void Game::triggerBankruptcy(Player& debtor, Player* creditor, int amount) {
     GameState prevState = state;
     state = GameState::LIQUIDATION;
@@ -683,7 +704,25 @@ int Game::promptTileIndex(Player& player) {
 void Game::promptFestivalSelection(Player& player) {
     if (!ui)
         return;
+    vector<pair<PropertyTile*, pair<int, int>>> before;
+    for (auto* prop : player.getProperties()) {
+        before.push_back({prop, {prop->getFestivalMultiplier(), prop->getFestivalDur()}});
+    }
     ui->promptFestivalSelection(player);
+    for (const auto& entry : before) {
+        PropertyTile* prop = entry.first;
+        int oldMult = entry.second.first;
+        int oldDur = entry.second.second;
+        int newMult = prop->getFestivalMultiplier();
+        int newDur = prop->getFestivalDur();
+        if (oldMult != newMult || oldDur != newDur) {
+            logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "FESTIVAL",
+                            prop->getCode() + ": x" + to_string(oldMult) + " -> x" +
+                                to_string(newMult) + ", durasi " + to_string(oldDur) + " -> " +
+                                to_string(newDur));
+            break;
+        }
+    }
 }
 
 pair<bool, int> Game::promptAuctionBid(Player& player, int currentBid, const PropertyTile& tile) {
@@ -695,5 +734,9 @@ pair<bool, int> Game::promptAuctionBid(Player& player, int currentBid, const Pro
 bool Game::runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor) {
     if (!ui)
         return false;
-    return ui->runLiquidationPanel(debtor, amountNeeded, creditor, getActivePlayers(), *board);
+    bool paid =
+        ui->runLiquidationPanel(debtor, amountNeeded, creditor, getActivePlayers(), *board,
+                                getCurrentTurn(), logger);
+    updateMonopolyStatus();
+    return paid;
 }
