@@ -192,13 +192,37 @@ BoardFactory::BuildResult BoardFactory::build(ConfigManager& cfg) {
         putTileFromDef(def);
     }
 
-    // ── Place all 40 tiles ────────────────────────────────────────────────────
-    for (int i = 0; i < 40; i++) {
-        auto it = tileMap.find(i);
-        if (it == tileMap.end()) {
-            throw runtime_error("Missing tile definition for board position " + to_string(i + 1));
-        }
-        board->addTile(move(it->second));
+    // ── Validate GO and Penjara counts ────────────────────────────────────────
+    int goCount = 0, penCount = 0;
+    for (const auto& def : actionLoader.getSpecialTiles()) {
+        const string& code = get<1>(def);
+        if (code == "GO")
+            goCount++;
+        else if (code == "PEN")
+            penCount++;
+    }
+    if (goCount != 1)
+        throw runtime_error("Papan harus memiliki tepat 1 petak GO, ditemukan: " +
+                            to_string(goCount));
+    if (penCount != 1)
+        throw runtime_error("Papan harus memiliki tepat 1 petak Penjara (PEN), ditemukan: " +
+                            to_string(penCount));
+
+    // ── Determine board size and validate ─────────────────────────────────────
+    if (tileMap.empty())
+        throw runtime_error("Konfigurasi papan kosong");
+    int totalTiles = tileMap.rbegin()->first + 1;
+    if (totalTiles < 20 || totalTiles > 60)
+        throw runtime_error("Jumlah petak harus antara 20 dan 60, ditemukan: " +
+                            to_string(totalTiles));
+    for (int i = 0; i < totalTiles; i++) {
+        if (!tileMap.count(i))
+            throw runtime_error("Posisi petak tidak ada di konfigurasi: " + to_string(i + 1));
+    }
+
+    // ── Place all tiles ────────────────────────────────────────────────────────
+    for (int i = 0; i < totalTiles; i++) {
+        board->addTile(move(tileMap[i]));
     }
 
     return std::make_tuple(move(board), move(chanceCards), move(communityCards),

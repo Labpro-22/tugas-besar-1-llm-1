@@ -115,7 +115,6 @@ void CommandHandler::dispatch(const string& input, Player& player, IGameContext&
                 if (filename.find("data/") != 0) {
                     filename = "data/" + filename;
                 }
-                // Check if file already exists — spec requires overwrite prompt
                 {
                     ifstream checkFile(filename);
                     if (checkFile.good()) {

@@ -98,7 +98,7 @@ public:
     void setUserInteraction(IUserInteraction* userInteraction);
 
     // ── Game lifecycle ─────────────────────────────────────────────────────────
-    void createGame();
+    void createGame(const std::string& configDir = "config");
     void loadGame(const std::string& filename);
     void saveGame(const std::string& filename) const;
     void runCycle();

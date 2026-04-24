@@ -42,7 +42,7 @@ int Board::getJailPosition() const {
             return i;
         }
     }
-    return 10;
+    throw std::logic_error("Jail tile (PEN) not found on board");
 }
 
 void Board::addTile(unique_ptr<Tile> tile) {

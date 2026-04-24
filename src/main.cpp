@@ -80,8 +80,14 @@ int main() {
 
         if (choice == 1) {
             // New game
+            cout << "Pilih papan (contoh: config-60) atau tekan enter untuk default (config): ";
+            string configDir;
+            getline(cin, configDir);
+            if (configDir.empty() || configDir.find_first_not_of(" \t\r\n") == string::npos) {
+                configDir = "config";
+            }
             try {
-                game.createGame();
+                game.createGame(configDir);
             } catch (const GameException& e) {
                 cout << "Gagal memulai permainan: " << e.what() << "\n";
                 continue;

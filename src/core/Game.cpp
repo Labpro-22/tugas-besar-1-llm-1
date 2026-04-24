@@ -110,9 +110,9 @@ void Game::resetGameData() {
     state = GameState::MENU;
 }
 
-void Game::createGame() {
+void Game::createGame(const string& configDir) {
     resetGameData();
-    ConfigManager cfg("config");
+    ConfigManager cfg(configDir);
     cfg.loadAll();
     config = cfg.getConfig();
     turnManager = TurnManager(config.maxTurn);

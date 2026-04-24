@@ -122,9 +122,11 @@ void GameView::displayBoard(const Board& board, const vector<Player*>& players, 
         return;
     }
 
-    const int CW = 10; // cell content width (visible chars)
-    const int COLS = 11;
-    const int INNER_W = 9 * (CW + 1) - 1; // 98 — interior span between border cells
+    const int CW = 10;
+    // Smallest S where 4*(S-1) >= totalTiles
+    const int S = (totalTiles + 3) / 4 + 1;
+    const int COLS = S;
+    const int INNER_W = (S - 2) * (CW + 1) - 1;
 
     // ── ANSI colour helpers ─────────────────────────────────────────────────────
     auto ansi = [](const string& cc) -> string {
@@ -175,15 +177,16 @@ void GameView::displayBoard(const Board& board, const vector<Player*>& players, 
         return r;
     };
 
-    // ── Position mapping: grid (row,col) → board position ───────────────────────
-    auto getPos = [](int row, int col) -> int {
-        if (row == 10)
-            return 10 - col; // bottom row: right-to-left
-        if (row == 0)
-            return 20 + col; // top row:    left-to-right
+    // ── Position mapping: generalized for any S-side grid ───────────────────────
+    // Perimeter clockwise from bottom-right (pos 0 = GO at bottom-right corner).
+    auto getPos = [S](int row, int col) -> int {
+        if (row == S - 1)
+            return (S - 1) - col;       // bottom row, right-to-left
         if (col == 0)
-            return 20 - row;    // left col:   top-to-bottom
-        return (30 + row) % 40; // right col:  top-to-bottom
+            return 2 * (S - 1) - row;   // left col, top-to-bottom
+        if (row == 0)
+            return 2 * (S - 1) + col;   // top row, left-to-right
+        return 3 * (S - 1) + row;       // right col, top-to-bottom
     };
 
     // ── Colour-group code for tile ──────────────────────────────────────────────
@@ -216,7 +219,7 @@ void GameView::displayBoard(const Board& board, const vector<Player*>& players, 
 
     int jailPos = board.getJailPosition();
 
-    // ── Print cell Line 1: [CC] NNN  (ANSI coloured bracket) ────────────────────
+    // ── Print cell Line 1: [CC] NNN ─────────────────────────────────────────────
     auto printL1 = [&](int pos) {
         Tile* t = board.getTileAt(pos);
         if (!t) {
@@ -228,7 +231,6 @@ void GameView::displayBoard(const Board& board, const vector<Player*>& players, 
         while (static_cast<int>(code.size()) < 3)
             code += ' ';
         code = code.substr(0, 3);
-        // visible width = [CC] NNN = 4+1+3 = 8, pad remaining
         cout << ansi(cc) << "[" << cc << "]" << RST << " " << code << string(max(0, CW - 8), ' ');
     };
 
@@ -240,9 +242,7 @@ void GameView::displayBoard(const Board& board, const vector<Player*>& players, 
             return;
         }
         string content;
-
         if (pos == jailPos) {
-            // Jail: show IN:<player-ids> V:<player-ids>
             string inIds, visIds;
             for (const auto* p : players) {
                 if (p->getStatus() == PlayerStatus::BANKRUPT)
@@ -262,7 +262,6 @@ void GameView::displayBoard(const Board& board, const vector<Player*>& players, 
                 content += "V:" + visIds;
             }
         } else {
-            // Owner + building level
             auto* prop = dynamic_cast<PropertyTile*>(t);
             if (prop && prop->getOwner()) {
                 content += "P" + to_string(prop->getOwner()->getId() + 1);
@@ -274,7 +273,6 @@ void GameView::displayBoard(const Board& board, const vector<Player*>& players, 
                         content += " " + string(lvl, '^');
                 }
             }
-            // Player bidak markers
             for (const auto* p : players) {
                 if (p->getStatus() == PlayerStatus::BANKRUPT)
                     continue;
@@ -299,10 +297,11 @@ void GameView::displayBoard(const Board& board, const vector<Player*>& players, 
     };
 
     // ── Interior content ────────────────────────────────────────────────────────
-    // 9 interior rows × 2 content lines = 18 content slots
-    // 8 partial-separator lines between interior rows = 8 separator slots
-    // Total: 26 interior text positions
-    vector<string> interior(26, pad("", INNER_W));
+    // (S-2) interior rows × 2 content lines + (S-3) separator lines
+    const int numInteriorRows = S - 2;
+    const int contentSlots = numInteriorRows * 2;
+    const int sepSlots = max(0, numInteriorRows - 1);
+    vector<string> interior(contentSlots + sepSlots, pad("", INNER_W));
 
     string titleBox = string(34, '=');
     string titleTxt = "||          NIMONSPOLI          ||";
@@ -310,76 +309,131 @@ void GameView::displayBoard(const Board& board, const vector<Player*>& players, 
     string turnStr =
         currentTurn >= 0 ? "TURN " + to_string(currentTurn) + " / " + to_string(maxTurn) : "";
 
-    // Content lines (indices 0..17 → 9 rows × 2 lines)
-    interior[0] = pad("", INNER_W);
-    interior[1] = pad("", INNER_W);
-    interior[2] = centerStr(titleBox, INNER_W);
-    interior[3] = centerStr(titleTxt, INNER_W);
-    interior[4] = pad("", INNER_W);
-    interior[5] = centerStr(turnStr, INNER_W);
-    interior[6] = pad("", INNER_W);
-    interior[7] = centerStr(divider, INNER_W);
-    interior[8] = centerStr("P1-P4 : Properti milik Pemain 1-4", INNER_W);
-    interior[9] = centerStr("^     : Rumah Level 1", INNER_W);
-    interior[10] = centerStr("^^^   : Rumah Level 3", INNER_W);
-    interior[11] = centerStr("* : Hotel (Maksimal)", INNER_W);
-    interior[12] = centerStr(divider, INNER_W);
-    interior[13] = centerStr("KODE WARNA:", INNER_W);
-    interior[14] = centerStr("[BM]=Biru Muda [KN]=Kuning", INNER_W);
-    interior[15] = centerStr("[PK]=Pink      [HJ]=Hijau", INNER_W);
-    interior[16] = centerStr("[DF]=Aksi      [AB]=Utility", INNER_W);
-    interior[17] = pad("", INNER_W);
-
-    // Separator lines between interior rows (indices 18..25 → 8 separators)
-    interior[18] = pad("", INNER_W);
-    interior[19] = centerStr(titleBox, INNER_W);
-    interior[20] = pad("", INNER_W);
-    interior[21] = centerStr("LEGENDA KEPEMILIKAN & STATUS", INNER_W);
-    interior[22] = centerStr("^^    : Rumah Level 2", INNER_W);
-    interior[23] = centerStr("(1)-(4): Bidak (IN=Tahanan, V=Mampir)", INNER_W);
-    interior[24] = centerStr("[CK]=Coklat    [MR]=Merah", INNER_W);
-    interior[25] = centerStr("[OR]=Orange    [BT]=Biru Tua", INNER_W);
+    if (numInteriorRows == 9) {
+        // ── Standard 40-tile layout: exact original assignment ────────────────
+        // Content slots [0..17] — 9 rows × 2 lines
+        interior[0]  = pad("", INNER_W);
+        interior[1]  = pad("", INNER_W);
+        interior[2]  = centerStr(titleBox, INNER_W);
+        interior[3]  = centerStr(titleTxt, INNER_W);
+        interior[4]  = pad("", INNER_W);
+        interior[5]  = centerStr(turnStr, INNER_W);
+        interior[6]  = pad("", INNER_W);
+        interior[7]  = centerStr(divider, INNER_W);
+        interior[8]  = centerStr("P1-P4 : Properti milik Pemain 1-4", INNER_W);
+        interior[9]  = centerStr("^     : Rumah Level 1", INNER_W);
+        interior[10] = centerStr("^^^   : Rumah Level 3", INNER_W);
+        interior[11] = centerStr("* : Hotel (Maksimal)", INNER_W);
+        interior[12] = centerStr(divider, INNER_W);
+        interior[13] = centerStr("KODE WARNA:", INNER_W);
+        interior[14] = centerStr("[BM]=Biru Muda [KN]=Kuning", INNER_W);
+        interior[15] = centerStr("[PK]=Pink      [HJ]=Hijau", INNER_W);
+        interior[16] = centerStr("[DF]=Aksi      [AB]=Utilitas", INNER_W);
+        interior[17] = pad("", INNER_W);
+        // Separator slots [18..25] — text that floats in the partial-sep lines
+        interior[18] = pad("", INNER_W);
+        interior[19] = centerStr(titleBox, INNER_W);
+        interior[20] = pad("", INNER_W);
+        interior[21] = centerStr("LEGENDA KEPEMILIKAN & STATUS", INNER_W);
+        interior[22] = centerStr("^^    : Rumah Level 2", INNER_W);
+        interior[23] = centerStr("(1)-(4): Bidak (IN=Tahanan, V=Mampir)", INNER_W);
+        interior[24] = centerStr("[CK]=Coklat    [MR]=Merah", INNER_W);
+        interior[25] = centerStr("[OR]=Orange    [BT]=Biru Tua", INNER_W);
+    } else {
+        // ── Dynamic layout: sequential fill ───────────────────────────────────
+        vector<string> legend;
+        legend.push_back(pad("", INNER_W));
+        legend.push_back(centerStr(titleBox, INNER_W));
+        legend.push_back(centerStr(titleTxt, INNER_W));
+        legend.push_back(centerStr(titleBox, INNER_W));
+        legend.push_back(pad("", INNER_W));
+        legend.push_back(centerStr(turnStr, INNER_W));
+        legend.push_back(pad("", INNER_W));
+        legend.push_back(centerStr(divider, INNER_W));
+        legend.push_back(centerStr("LEGENDA KEPEMILIKAN & STATUS", INNER_W));
+        legend.push_back(centerStr("P1-P4 : Properti milik Pemain 1-4", INNER_W));
+        legend.push_back(centerStr("^     : Rumah Level 1", INNER_W));
+        legend.push_back(centerStr("^^    : Rumah Level 2", INNER_W));
+        legend.push_back(centerStr("^^^   : Rumah Level 3", INNER_W));
+        legend.push_back(centerStr("* : Hotel (Maksimal)", INNER_W));
+        legend.push_back(centerStr("(1)-(4): Bidak (IN=Tahanan, V=Mampir)", INNER_W));
+        legend.push_back(centerStr(divider, INNER_W));
+        legend.push_back(centerStr("KODE WARNA:", INNER_W));
+        legend.push_back(centerStr("[CK]=Coklat    [MR]=Merah", INNER_W));
+        legend.push_back(centerStr("[BM]=Biru Muda [KN]=Kuning", INNER_W));
+        legend.push_back(centerStr("[PK]=Pink      [HJ]=Hijau", INNER_W));
+        legend.push_back(centerStr("[OR]=Orange    [BT]=Biru Tua", INNER_W));
+        legend.push_back(centerStr("[DF]=Aksi      [AB]=Utilitas", INNER_W));
+        legend.push_back(pad("", INNER_W));
+        for (int i = 0; i < static_cast<int>(interior.size()) &&
+                        i < static_cast<int>(legend.size());
+             ++i) {
+            interior[i] = legend[i];
+        }
+    }
 
     // ── Render board ────────────────────────────────────────────────────────────
-    for (int row = 0; row < COLS; ++row) {
-        // Separator before this row
-        if (row == 0 || row == 1 || row == 10) {
+    for (int row = 0; row < S; ++row) {
+        if (row == 0 || row == 1 || row == S - 1) {
             printFullSep();
         } else {
-            // Partial separator with interior text
-            int sepIdx = 18 + (row - 2); // row2→18, row3→19, ..., row9→25
-            cout << "+" << string(CW, '-') << "+" << interior[sepIdx] << "+" << string(CW, '-')
-                 << "+\n";
+            int sepIdx = contentSlots + (row - 2);
+            cout << "+" << string(CW, '-') << "+" << interior[sepIdx] << "+"
+                 << string(CW, '-') << "+\n";
         }
 
-        // --- Line 1 (tile name) ---
+        // Line 1 (tile code + colour)
         cout << "|";
-        if (row == 0 || row == 10) {
-            for (int col = 0; col < COLS; ++col) {
-                printL1(getPos(row, col));
+        if (row == 0 || row == S - 1) {
+            for (int col = 0; col < S; ++col) {
+                int pos = getPos(row, col);
+                if (pos < totalTiles)
+                    printL1(pos);
+                else
+                    cout << string(CW, ' ');
                 cout << "|";
             }
         } else {
             int cIdx = (row - 1) * 2;
-            printL1(getPos(row, 0));
+            int posL = getPos(row, 0);
+            if (posL < totalTiles)
+                printL1(posL);
+            else
+                cout << string(CW, ' ');
             cout << "|" << interior[cIdx] << "|";
-            printL1(getPos(row, 10));
+            int posR = getPos(row, S - 1);
+            if (posR < totalTiles)
+                printL1(posR);
+            else
+                cout << string(CW, ' ');
             cout << "|";
         }
         cout << "\n";
 
-        // --- Line 2 (status) ---
+        // Line 2 (status / tokens)
         cout << "|";
-        if (row == 0 || row == 10) {
-            for (int col = 0; col < COLS; ++col) {
-                printL2(getPos(row, col));
+        if (row == 0 || row == S - 1) {
+            for (int col = 0; col < S; ++col) {
+                int pos = getPos(row, col);
+                if (pos < totalTiles)
+                    printL2(pos);
+                else
+                    cout << string(CW, ' ');
                 cout << "|";
             }
         } else {
             int cIdx = (row - 1) * 2 + 1;
-            printL2(getPos(row, 0));
+            int posL = getPos(row, 0);
+            if (posL < totalTiles)
+                printL2(posL);
+            else
+                cout << string(CW, ' ');
             cout << "|" << interior[cIdx] << "|";
-            printL2(getPos(row, 10));
+            int posR = getPos(row, S - 1);
+            if (posR < totalTiles)
+                printL2(posR);
+            else
+                cout << string(CW, ' ');
             cout << "|";
         }
         cout << "\n";
