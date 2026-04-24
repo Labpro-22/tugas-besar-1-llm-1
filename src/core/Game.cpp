@@ -292,17 +292,19 @@ bool Game::handleJailTurn(Player& player) {
         ui->printMessage("Giliran ke-4 di penjara. Wajib membayar denda M" +
                          to_string(config.jailFine) + ".\n");
         chargeVoluntary(player, config.jailFine);
-        player.releaseFromJail();
-        ui->printMessage(player.getUsername() + " keluar dari penjara.\n");
-        // Take regular roll
-        lastDiceTotal = dice->rollRandom();
-        auto dv = dice->getDiceValues();
-        ui->printMessage("Dadu: " + to_string(dv.first) + " + " + to_string(dv.second) + " = " +
-                         to_string(lastDiceTotal) + "\n");
-        logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "DADU",
-                        "Lempar: " + to_string(dv.first) + "+" + to_string(dv.second) + "=" +
-                            to_string(lastDiceTotal) + " (keluar penjara, bayar denda)");
-        movePlayerBy(player, lastDiceTotal);
+        if (player.getStatus() != PlayerStatus::BANKRUPT) {
+            player.releaseFromJail();
+            ui->printMessage(player.getUsername() + " keluar dari penjara.\n");
+            // Take regular roll
+            lastDiceTotal = dice->rollRandom();
+            auto dv = dice->getDiceValues();
+            ui->printMessage("Dadu: " + to_string(dv.first) + " + " + to_string(dv.second) + " = " +
+                             to_string(lastDiceTotal) + "\n");
+            logger.logEvent(LogLevel::INFO, getCurrentTurn(), player.getUsername(), "DADU",
+                            "Lempar: " + to_string(dv.first) + "+" + to_string(dv.second) + "=" +
+                                to_string(lastDiceTotal) + " (keluar penjara, bayar denda)");
+            movePlayerBy(player, lastDiceTotal);
+        }
         return false;
     }
 
@@ -350,7 +352,7 @@ bool Game::handleJailTurn(Player& player) {
         return false;
     } else if (choice == "BAYAR" || choice == "1") {
         chargeVoluntary(player, config.jailFine);
-        if (player.getStatus() == PlayerStatus::ACTIVE) {
+        if (player.getStatus() != PlayerStatus::BANKRUPT) {
             player.releaseFromJail();
             ui->printMessage(player.getUsername() + " membayar M" + to_string(config.jailFine) +
                              " dan keluar dari penjara.\n");
@@ -734,9 +736,8 @@ pair<bool, int> Game::promptAuctionBid(Player& player, int currentBid, const Pro
 bool Game::runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor) {
     if (!ui)
         return false;
-    bool paid =
-        ui->runLiquidationPanel(debtor, amountNeeded, creditor, getActivePlayers(), *board,
-                                getCurrentTurn(), logger);
+    bool paid = ui->runLiquidationPanel(debtor, amountNeeded, creditor, getActivePlayers(), *board,
+                                        getCurrentTurn(), logger);
     updateMonopolyStatus();
     return paid;
 }

@@ -31,15 +31,19 @@ void GameView::printEmptyLine() {
 
 string GameView::readLine() {
     string line;
-    getline(cin, line);
+    if (!getline(cin, line)) {
+        cin.clear();
+    }
     return line;
 }
 
 int GameView::readInt() {
-    int value = 0;
-    cin >> value;
-    cin.ignore();
-    return value;
+    string line = readLine();
+    try {
+        return stoi(line);
+    } catch (...) {
+        return -1;
+    }
 }
 
 void GameView::clearScreen() const {
@@ -65,12 +69,11 @@ vector<pair<string, bool>> GameView::promptPlayerSetup() {
     int count = 0;
     while (true) {
         cout << "Jumlah pemain (2-4): ";
-        if (cin >> count && count >= 2 && count <= 4) {
+        count = readInt();
+        if (count >= 2 && count <= 4) {
             break;
         }
         cout << "Input tidak valid. Jumlah pemain harus antara 2 hingga 4.\n";
-        cin.clear();
-        cin.ignore(10000, '\n');
     }
 
     vector<pair<string, bool>> results(count);
@@ -78,7 +81,11 @@ vector<pair<string, bool>> GameView::promptPlayerSetup() {
         string currentName;
         while (true) {
             cout << "Nama pemain " << (i + 1) << ": ";
-            cin >> currentName;
+            currentName = readLine();
+            if (currentName.empty() || currentName.find_first_not_of(" \t\r\n") == string::npos) continue;
+            
+            istringstream iss(currentName);
+            iss >> currentName;
 
             bool duplicate = false;
             for (int j = 0; j < i; ++j) {
@@ -97,8 +104,7 @@ vector<pair<string, bool>> GameView::promptPlayerSetup() {
         bool isCom = false;
         while (true) {
             cout << "Apakah " << (i + 1) << " sebuah COM? (y/n) ";
-            string ans;
-            cin >> ans;
+            string ans = readLine();
             if (ans == "y" || ans == "Y") {
                 isCom = true;
                 break;
@@ -111,7 +117,6 @@ vector<pair<string, bool>> GameView::promptPlayerSetup() {
         }
         results[i] = make_pair(currentName, isCom);
     }
-    cin.ignore();
     return results;
 }
 
@@ -592,8 +597,8 @@ bool GameView::promptBuyProperty(Player& player, PropertyTile& tile) {
         c = y ? 'y' : 'n';
         cout << c << "\n";
     } else {
-        cin >> c;
-        cin.ignore();
+        string s = readLine();
+        c = s.empty() ? 'n' : s[0];
     }
     return (c == 'y' || c == 'Y');
 }
@@ -630,8 +635,7 @@ PropertyTile* GameView::promptSelectOpponentProperty(Player& player, const vecto
         c = rand() % (opts.size() + 1);
         cout << c << "\n";
     } else {
-        cin >> c;
-        cin.ignore();
+        c = readInt();
     }
     if (c < 1 || c > static_cast<int>(opts.size()))
         return nullptr;
@@ -666,8 +670,7 @@ Player* GameView::promptSelectTarget(Player& player, const vector<Player*>& play
         c = rand() % (targets.size() + 1);
         cout << c << "\n";
     } else {
-        cin >> c;
-        cin.ignore();
+        c = readInt();
     }
     if (c < 1 || c > static_cast<int>(targets.size()))
         return nullptr;
@@ -685,8 +688,7 @@ int GameView::promptTaxChoice(Player& player, int flat, int pct) {
         choice = (rand() % 2) + 1;
         cout << choice << "\n";
     } else {
-        cin >> choice;
-        cin.ignore();
+        choice = readInt();
     }
     if (choice == 2) {
         int totalWealth = player.getTotalWealth();
@@ -714,8 +716,7 @@ int GameView::promptTileIndex(Player& player, const Board& board) {
         idx = rand() % board.getTotalTiles();
         cout << idx << "\n";
     } else {
-        cin >> idx;
-        cin.ignore();
+        idx = readInt();
     }
     if (idx < 0 || idx >= board.getTotalTiles())
         idx = 0;
@@ -745,8 +746,7 @@ void GameView::promptFestivalSelection(Player& player) {
         choice = rand() % (props.size() + 1);
         cout << choice << "\n";
     } else {
-        cin >> choice;
-        cin.ignore();
+        choice = readInt();
     }
     if (choice < 1 || choice > static_cast<int>(props.size())) {
         cout << "Efek festival tidak diterapkan.\n";
@@ -904,12 +904,11 @@ bool GameView::runLiquidationPanel(Player& debtor, int amountNeeded, Player* cre
         cout << "Pilih aksi (0 jika sudah cukup): ";
 
         int choice = 0;
-        if (debtor.getIsComputer()) {
+    if (debtor.getIsComputer()) {
             choice = (rand() % (sellable.size() + mortgageable.size())) + 1;
             cout << choice << "\n";
         } else {
-            cin >> choice;
-            cin.ignore();
+            choice = readInt();
         }
 
         if (choice == 0) {

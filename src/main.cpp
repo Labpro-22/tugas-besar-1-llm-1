@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -105,8 +106,13 @@ int main() {
             // Load game
             cout << "Nama file save: ";
             string filename;
-            cin >> filename;
-            cin.ignore();
+            string tempVal;
+            if (getline(cin, tempVal)) {
+                istringstream iss(tempVal);
+                iss >> filename;
+            }
+
+            if (filename.empty()) continue;
 
             if (filename.find("data/") != 0) {
                 filename = "data/" + filename;
