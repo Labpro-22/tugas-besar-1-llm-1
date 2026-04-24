@@ -67,6 +67,8 @@ static unique_ptr<SkillCard> extractCardFromStream(istringstream& ss, const stri
 
 // ── Save ──────────────────────────────────────────────────────────────────────
 
+static const string SAVE_CONFIG_PREFIX = "CONFIG_DIR ";
+
 GameSaveLoader::GameSaveLoader() {}
 
 GameSaveLoader::~GameSaveLoader() {}
@@ -75,6 +77,8 @@ void GameSaveLoader::save(const Game& game, const string& filename) const {
     ofstream out(filename);
     if (!out)
         throw FileException(filename, "simpan");
+
+    out << SAVE_CONFIG_PREFIX << game.currentConfigDir << "\n";
 
     const TurnManager& tm = game.turnManager;
     // <TURN_SAAT_INI> <MAX_TURN> <JUMLAH_PEMAIN>
@@ -221,10 +225,24 @@ void GameSaveLoader::load(Game& game, const string& filename) const {
     if (!in)
         throw FileException(filename, "tidak_ditemukan");
 
-    // Rebuild board structure first
-    ConfigManager cfg("config");
+    string line;
+    if (!getline(in, line))
+        throw FileException(filename, "muat");
+
+    string configDir = "config";
+    if (line.rfind(SAVE_CONFIG_PREFIX, 0) == 0) {
+        string savedDir = line.substr(SAVE_CONFIG_PREFIX.size());
+        if (!savedDir.empty()) {
+            configDir = savedDir;
+        }
+        if (!getline(in, line))
+            throw FileException(filename, "muat");
+    }
+
+    ConfigManager cfg(configDir);
     cfg.loadAll();
     game.config = cfg.getConfig();
+    game.currentConfigDir = configDir;
     auto [newBoard, newChanceCards, newCommunityCards, newAllSkillCards, newChanceDeck,
           newCommunityDeck, newSkillDeck] = BoardFactory::build(cfg);
     game.board = move(newBoard);
@@ -234,10 +252,6 @@ void GameSaveLoader::load(Game& game, const string& filename) const {
     game.chanceDeck = move(newChanceDeck);
     game.communityDeck = move(newCommunityDeck);
     game.skillDeck = move(newSkillDeck);
-
-    string line;
-    if (!getline(in, line))
-        throw FileException(filename, "muat");
 
     // <TURN_SAAT_INI> <MAX_TURN> <JUMLAH_PEMAIN>
     istringstream ss(line);

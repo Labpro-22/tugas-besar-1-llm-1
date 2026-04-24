@@ -25,7 +25,9 @@
 
 using namespace std;
 
-Game::Game() : state(GameState::MENU), lastDiceTotal(0), turnManager(0), ui(nullptr) {
+Game::Game()
+    : currentConfigDir("config"), state(GameState::MENU), lastDiceTotal(0), turnManager(0),
+      ui(nullptr) {
     dice = make_unique<Dice>();
     board = make_unique<Board>();
 }
@@ -105,6 +107,7 @@ void Game::resetGameData() {
     board = make_unique<Board>();
     dice = make_unique<Dice>();
     logger.clear();
+    currentConfigDir = "config";
     turnManager = TurnManager(0);
     lastDiceTotal = 0;
     state = GameState::MENU;
@@ -115,6 +118,7 @@ void Game::createGame(const string& configDir) {
     ConfigManager cfg(configDir);
     cfg.loadAll();
     config = cfg.getConfig();
+    currentConfigDir = configDir;
     turnManager = TurnManager(config.maxTurn);
 
     // Delegate board construction to BoardFactory
@@ -688,8 +692,8 @@ pair<bool, int> Game::promptAuctionBid(Player& player, int currentBid, const Pro
     return ui->promptAuctionBid(player, currentBid, tile);
 }
 
-void Game::runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor) {
+bool Game::runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor) {
     if (!ui)
-        return;
-    ui->runLiquidationPanel(debtor, amountNeeded, creditor, getActivePlayers(), *board);
+        return false;
+    return ui->runLiquidationPanel(debtor, amountNeeded, creditor, getActivePlayers(), *board);
 }

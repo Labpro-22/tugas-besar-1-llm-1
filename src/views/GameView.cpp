@@ -804,7 +804,7 @@ pair<bool, int> GameView::promptAuctionBid(Player& player, int currentBid,
     }
 }
 
-void GameView::runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor,
+bool GameView::runLiquidationPanel(Player& debtor, int amountNeeded, Player* creditor,
                                    const vector<Player*>& players, const Board& board) {
     (void)players;
     (void)board;
@@ -832,7 +832,7 @@ void GameView::runLiquidationPanel(Player& debtor, int amountNeeded, Player* cre
 
         if (sellable.empty() && mortgageable.empty()) {
             cout << "Tidak ada aset yang dapat dilikuidasi.\n";
-            break;
+            return false;
         }
 
         cout << "[Jual ke Bank]\n";
@@ -902,17 +902,15 @@ void GameView::runLiquidationPanel(Player& debtor, int amountNeeded, Player* cre
     }
 
     // Execute payment
-    if (debtor.getMoney() >= amountNeeded) {
-        debtor -= amountNeeded;
-        if (creditor) {
-            *creditor += amountNeeded;
-            cout << "Kewajiban M" << amountNeeded << " terpenuhi. Membayar ke "
-                 << creditor->getUsername() << "...\n";
-            cout << "Uang " << debtor.getUsername() << ": M" << debtor.getMoney() << "\n";
-            cout << "Uang " << creditor->getUsername() << ": M" << creditor->getMoney() << "\n";
-        } else {
-            cout << "Kewajiban M" << amountNeeded << " terpenuhi. Membayar ke Bank...\n";
-        }
-        return;
+    debtor -= amountNeeded;
+    if (creditor) {
+        *creditor += amountNeeded;
+        cout << "Kewajiban M" << amountNeeded << " terpenuhi. Membayar ke "
+             << creditor->getUsername() << "...\n";
+        cout << "Uang " << debtor.getUsername() << ": M" << debtor.getMoney() << "\n";
+        cout << "Uang " << creditor->getUsername() << ": M" << creditor->getMoney() << "\n";
+    } else {
+        cout << "Kewajiban M" << amountNeeded << " terpenuhi. Membayar ke Bank...\n";
     }
+    return true;
 }

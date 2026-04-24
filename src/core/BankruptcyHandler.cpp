@@ -15,8 +15,9 @@ void BankruptcyHandler::handle(Player& debtor, Player* creditor, int amount, IGa
     int maxCash = computeMaxLiquidation(debtor);
 
     if (debtor.getMoney() + maxCash >= amount) {
-        ctx.runLiquidationPanel(debtor, amount, creditor);
-        return;
+        bool paid = ctx.runLiquidationPanel(debtor, amount, creditor);
+        if (paid)
+            return;
     }
     debtor.setStatus(PlayerStatus::BANKRUPT);
     if (creditor) {
