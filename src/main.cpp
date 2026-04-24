@@ -32,48 +32,27 @@ static void runEndScreen(GameView& view, const Game& game) {
         return;
     }
 
-    class PlayerSummary {
-    public:
-        string username;
-        int cash;
-        int propertyCount;
-        int cardCount;
-    };
-
-    vector<PlayerSummary> summaries;
+    vector<const Player*> ranked;
     for (const auto& p : players) {
-        summaries.push_back({p->getUsername(), p->getMoney(),
-                             static_cast<int>(p->getProperties().size()),
-                             static_cast<int>(p->getHand().size())});
+        ranked.push_back(p.get());
     }
-    sort(summaries.begin(), summaries.end(),
-         [](const PlayerSummary& left, const PlayerSummary& right) {
-             if (left.cash != right.cash)
-                 return left.cash > right.cash;
-             if (left.propertyCount != right.propertyCount)
-                 return left.propertyCount > right.propertyCount;
-             if (left.cardCount != right.cardCount)
-                 return left.cardCount > right.cardCount;
-             return left.username < right.username;
-         });
+    stable_sort(ranked.begin(), ranked.end(),
+                [](const Player* a, const Player* b) { return *a > *b; });
 
     vector<string> winners;
-    if (!summaries.empty()) {
-        const PlayerSummary& top = summaries.front();
-        for (const auto& summary : summaries) {
-            if (summary.cash == top.cash && summary.propertyCount == top.propertyCount &&
-                summary.cardCount == top.cardCount) {
-                winners.push_back(summary.username);
-            }
+    const Player* top = ranked.front();
+    for (const Player* p : ranked) {
+        if (!(*p < *top) && !(*top < *p)) {
+            winners.push_back(p->getUsername());
         }
     }
 
     vector<string> rankings;
-    for (int i = 0; i < static_cast<int>(summaries.size()); ++i) {
-        rankings.push_back(to_string(i + 1) + ". " + summaries[i].username + " - cash M" +
-                           to_string(summaries[i].cash) + ", properti " +
-                           to_string(summaries[i].propertyCount) + ", kartu " +
-                           to_string(summaries[i].cardCount));
+    for (int i = 0; i < static_cast<int>(ranked.size()); ++i) {
+        rankings.push_back(to_string(i + 1) + ". " + ranked[i]->getUsername() + " - cash M" +
+                           to_string(ranked[i]->getMoney()) + ", properti " +
+                           to_string(ranked[i]->getProperties().size()) + ", kartu " +
+                           to_string(ranked[i]->getHand().size()));
     }
     view.showEndGameScreen(winners, rankings);
 }

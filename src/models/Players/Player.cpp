@@ -29,11 +29,15 @@ Player& Player::operator-=(int amount) {
 }
 
 bool Player::operator<(const Player& other) const {
-    return money < other.money;
+    if (money != other.money)
+        return money < other.money;
+    if (properties.size() != other.properties.size())
+        return properties.size() < other.properties.size();
+    return hand.size() < other.hand.size();
 }
 
 bool Player::operator>(const Player& other) const {
-    return money > other.money;
+    return other < *this;
 }
 
 // ── Basic getters ─────────────────────────────────────────────────────────────
