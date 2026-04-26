@@ -81,7 +81,8 @@ int main() {
 
         if (choice == 1) {
             // New game
-            cout << "Pilih papan (contoh: config-60) atau tekan enter untuk default (config): ";
+            cout << "Pilih papan (contoh: config-60; ini perlu buat folder baru di root yg namanya "
+                    "config-60) atau tekan enter untuk default (config): ";
             string configDir;
             getline(cin, configDir);
             if (configDir.empty() || configDir.find_first_not_of(" \t\r\n") == string::npos) {
@@ -112,7 +113,8 @@ int main() {
                 iss >> filename;
             }
 
-            if (filename.empty()) continue;
+            if (filename.empty())
+                continue;
 
             if (filename.find("data/") != 0) {
                 filename = "data/" + filename;
