@@ -225,9 +225,14 @@ void PropertyManager::build(Player& player, Board& board, int currentTurn, Logge
             for (auto* s : gi.streets) {
                 int lvl = s->getPropertyLevel();
                 string lvlStr = (lvl == 5) ? "Hotel" : to_string(lvl) + " rumah";
-                int price = (lvl >= 4) ? s->getHotelPrice() : s->getHousePrice();
-                msg += "  - " + s->getName() + " (" + s->getCode() + "): " + lvlStr +
-                       " (Harga bangun: M" + to_string(price) + ")\n";
+                msg += "  - " + s->getName() + " (" + s->getCode() + "): " + lvlStr;
+                if (lvl < 5) {
+                    int price = (lvl >= 4) ? s->getHotelPrice() : s->getHousePrice();
+                    msg += " (Harga bangun: M" + to_string(price) + ")";
+                } else {
+                    msg += " (Maksimal)";
+                }
+                msg += "\n";
             }
         }
         msg += "Uang kamu saat ini: M" + to_string(player.getMoney()) + "\n";
@@ -257,10 +262,10 @@ void PropertyManager::build(Player& player, Board& board, int currentTurn, Logge
     for (auto* s : selectedGroup.streets)
         minLevel = min(minLevel, s->getPropertyLevel());
 
-    bool allFourHouses = true;
+    bool allAtLeastFourHouses = true;
     for (auto* s : selectedGroup.streets) {
-        if (s->getPropertyLevel() != 4) {
-            allFourHouses = false;
+        if (s->getPropertyLevel() < 4) {
+            allAtLeastFourHouses = false;
             break;
         }
     }
@@ -269,9 +274,9 @@ void PropertyManager::build(Player& player, Board& board, int currentTurn, Logge
     vector<StreetTile*> buildable;
     for (auto* s : selectedGroup.streets) {
         int lvl = s->getPropertyLevel();
-        if (allFourHouses && lvl == 4) {
+        if (allAtLeastFourHouses && lvl == 4) {
             buildable.push_back(s);
-        } else if (!allFourHouses && lvl == minLevel && lvl < 4) {
+        } else if (!allAtLeastFourHouses && lvl == minLevel && lvl < 4) {
             buildable.push_back(s);
         }
     }
