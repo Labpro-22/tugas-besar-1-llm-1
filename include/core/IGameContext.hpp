@@ -33,6 +33,9 @@ public:
     /** Total of the last dice roll — needed by UtilityTile rent calculation. */
     virtual int getLastDiceTotal() const = 0;
 
+    /** Print a message through the UI layer. */
+    virtual void printMessage(const std::string& message) = 0;
+
     // ── Player movement ────────────────────────────────────────────────────────
     /** Move player forward by steps; grants GO salary if lap is completed. */
     virtual void movePlayerBy(Player& player, int steps) = 0;

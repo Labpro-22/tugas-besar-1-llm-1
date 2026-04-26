@@ -2,7 +2,6 @@
 #include "Board.hpp"
 #include "IGameContext.hpp"
 #include "Player.hpp"
-#include <iostream>
 
 using namespace std;
 
@@ -15,7 +14,7 @@ void TeleportCard::executeAction(IGameContext& ctx) {
     Player& player = ctx.getActivePlayer();
     int destIdx = ctx.promptTileIndex(player);
     ctx.repositionPlayer(player, destIdx);
-    cout << "TeleportCard: pindah ke "
-         << ctx.getBoard().getTileAt(destIdx)->getName() << "." << endl;
+    ctx.printMessage("TeleportCard: pindah ke " + ctx.getBoard().getTileAt(destIdx)->getName() +
+                     ".\n");
     ctx.getBoard().getTileAt(destIdx)->landedOn(ctx);
 }

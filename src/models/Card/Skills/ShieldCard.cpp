@@ -1,7 +1,7 @@
 #include "ShieldCard.hpp"
 #include "IGameContext.hpp"
 #include "Player.hpp"
-#include <iostream>
+#include <string>
 
 using namespace std;
 
@@ -17,6 +17,6 @@ int ShieldCard::getDuration() const {
 void ShieldCard::executeAction(IGameContext& ctx) {
     Player& player = ctx.getActivePlayer();
     player.activateShield(duration);
-    cout << "ShieldCard diaktifkan! Anda kebal terhadap tagihan atau sanksi selama " << duration
-         << " giliran." << endl;
+    ctx.printMessage("ShieldCard diaktifkan! Anda kebal terhadap tagihan atau sanksi selama " +
+                     to_string(duration) + " giliran.\n");
 }

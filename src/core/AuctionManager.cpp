@@ -3,7 +3,7 @@
 #include "Logger.hpp"
 #include "Player.hpp"
 #include "PropertyTile.hpp"
-#include <iostream>
+#include <string>
 #include <vector>
 
 using namespace std;
@@ -23,19 +23,20 @@ void AuctionManager::runAuction(PropertyTile& tile, const vector<Player*>& bidde
     int consecutivePasses = 0;
     int currentIndex = 0;
 
-    cout << "\n=== LELANG: " << tile.getName() << " [" << tile.getCode() << "] ===\n";
-    cout << "Harga beli asli: M" << tile.getPrice() << "\n";
-    cout << "Masukkan BID <jumlah> untuk menawar, atau PASS untuk melewati.\n\n";
+    ctx.printMessage("\n=== LELANG: " + tile.getName() + " [" + tile.getCode() + "] ===\n");
+    ctx.printMessage("Harga beli asli: M" + to_string(tile.getPrice()) + "\n");
+    ctx.printMessage("Masukkan BID <jumlah> untuk menawar, atau PASS untuk melewati.\n\n");
 
     while (true) {
         Player* bidder = bidderOrder[currentIndex];
         const bool mustBid = (highBidder == nullptr && consecutivePasses == bidderCount - 1);
         string highName = highBidder ? highBidder->getUsername() : "Tidak ada";
         int displayBid = highBid < 0 ? 0 : highBid;
-        cout << "Penawaran tertinggi saat ini: M" << displayBid << " oleh " << highName << "\n";
+        ctx.printMessage("Penawaran tertinggi saat ini: M" + to_string(displayBid) + " oleh " +
+                         highName + "\n");
         if (mustBid) {
-            cout << bidder->getUsername()
-                 << " wajib melakukan BID agar lelang memiliki minimal satu penawaran.\n";
+            ctx.printMessage(bidder->getUsername() +
+                             " wajib melakukan BID agar lelang memiliki minimal satu penawaran.\n");
         }
 
         pair<bool, int> bidResult = ctx.promptAuctionBid(*bidder, highBid, tile);
@@ -46,7 +47,7 @@ void AuctionManager::runAuction(PropertyTile& tile, const vector<Player*>& bidde
             highBid = amount;
             highBidder = bidder;
             consecutivePasses = 0;
-            cout << bidder->getUsername() << " menawar M" << amount << "!\n";
+            ctx.printMessage(bidder->getUsername() + " menawar M" + to_string(amount) + "!\n");
             ctx.getLogger().logEvent(LogLevel::INFO, ctx.getCurrentTurn(), bidder->getUsername(),
                                      "LELANG_BID", tile.getCode() + " M" + to_string(amount));
         } else if (mustBid) {
@@ -55,19 +56,19 @@ void AuctionManager::runAuction(PropertyTile& tile, const vector<Player*>& bidde
                 highBid = forcedBid;
                 highBidder = bidder;
                 consecutivePasses = 0;
-                cout << bidder->getUsername() << " terpaksa menawar minimum M" << forcedBid
-                     << "!\n";
+                ctx.printMessage(bidder->getUsername() + " terpaksa menawar minimum M" +
+                                 to_string(forcedBid) + "!\n");
                 ctx.getLogger().logEvent(LogLevel::INFO, ctx.getCurrentTurn(),
                                          bidder->getUsername(), "LELANG_BID",
                                          tile.getCode() + " M" + to_string(forcedBid));
             } else {
-                cout << "Belum ada penawaran. " << bidder->getUsername()
-                     << " harus memasukkan BID yang valid.\n";
+                ctx.printMessage("Belum ada penawaran. " + bidder->getUsername() +
+                                 " harus memasukkan BID yang valid.\n");
                 continue;
             }
         } else {
             ++consecutivePasses;
-            cout << bidder->getUsername() << " melewati lelang.\n";
+            ctx.printMessage(bidder->getUsername() + " melewati lelang.\n");
             ctx.getLogger().logEvent(LogLevel::INFO, ctx.getCurrentTurn(), bidder->getUsername(),
                                      "LELANG_PASS", tile.getCode());
             if (highBidder != nullptr && consecutivePasses >= bidderCount - 1) {
@@ -78,10 +79,10 @@ void AuctionManager::runAuction(PropertyTile& tile, const vector<Player*>& bidde
         currentIndex = (currentIndex + 1) % bidderCount;
     }
 
-    cout << "\n=== HASIL LELANG ===\n";
+    ctx.printMessage("\n=== HASIL LELANG ===\n");
     if (highBidder && highBid >= 0) {
-        cout << highBidder->getUsername() << " memenangkan lelang dengan penawaran M" << highBid
-             << "!\n";
+        ctx.printMessage(highBidder->getUsername() + " memenangkan lelang dengan penawaran M" +
+                         to_string(highBid) + "!\n");
         ctx.getLogger().logEvent(LogLevel::INFO, ctx.getCurrentTurn(), highBidder->getUsername(),
                                  "LELANG_MENANG", tile.getCode() + " M" + to_string(highBid));
         ctx.chargeVoluntary(*highBidder, highBid);
@@ -89,6 +90,6 @@ void AuctionManager::runAuction(PropertyTile& tile, const vector<Player*>& bidde
             ctx.grantProperty(*highBidder, tile);
         }
     } else {
-        cout << "Tidak ada pemenang lelang. " << tile.getName() << " tetap milik Bank.\n";
+        ctx.printMessage("Tidak ada pemenang lelang. " + tile.getName() + " tetap milik Bank.\n");
     }
 }

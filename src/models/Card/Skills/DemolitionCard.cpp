@@ -2,7 +2,6 @@
 #include "IGameContext.hpp"
 #include "Player.hpp"
 #include "PropertyTile.hpp"
-#include <iostream>
 
 using namespace std;
 
@@ -15,7 +14,7 @@ void DemolitionCard::executeAction(IGameContext& ctx) {
     Player& player = ctx.getActivePlayer();
     PropertyTile* target = ctx.promptSelectOpponentProperty(player);
     if (target) {
-        cout << "DemolitionCard: " << target->getName() << " dihancurkan!" << endl;
+        ctx.printMessage("DemolitionCard: " + target->getName() + " dihancurkan!\n");
         ctx.destroyPropertyToBank(*target);
     }
 }

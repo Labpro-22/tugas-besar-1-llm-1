@@ -121,6 +121,7 @@ public:
     int getCurrentTurn() const override;
     Logger& getLogger() override;
     int getLastDiceTotal() const override;
+    void printMessage(const std::string& message) override;
 
     void movePlayerBy(Player& player, int steps) override;
     void movePlayerTo(Player& player, int tileIndex) override;

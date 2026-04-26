@@ -1,7 +1,7 @@
 #include "DiscountCard.hpp"
 #include "IGameContext.hpp"
 #include "Player.hpp"
-#include <iostream>
+#include <string>
 
 using namespace std;
 
@@ -22,6 +22,7 @@ int DiscountCard::getDuration() const {
 void DiscountCard::executeAction(IGameContext& ctx) {
     Player& player = ctx.getActivePlayer();
     player.applyDiscount(discountPercentage, duration);
-    cout << "DiscountCard diaktifkan! Kamu mendapat diskon " << discountPercentage
-         << "% untuk pembelian selama " << duration << " giliran." << endl;
+    ctx.printMessage("DiscountCard diaktifkan! Kamu mendapat diskon " +
+                     to_string(discountPercentage) + "% untuk pembelian selama " +
+                     to_string(duration) + " giliran.\n");
 }

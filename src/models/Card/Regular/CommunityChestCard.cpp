@@ -1,7 +1,7 @@
 #include "CommunityChestCard.hpp"
 #include "IGameContext.hpp"
 #include "Player.hpp"
-#include <iostream>
+#include <string>
 
 using namespace std;
 
@@ -17,26 +17,26 @@ CommunityChestEffect CommunityChestCard::getEffect() const {
 
 void CommunityChestCard::executeAction(IGameContext& ctx) {
     Player& player = ctx.getActivePlayer();
-    cout << "Kartu Dana Umum: " << getName() << "\n"
-         << "Efek: " << getDescription() << endl;
+    ctx.printMessage("Kartu Dana Umum: " + getName() + "\n");
+    ctx.printMessage("Efek: " + getDescription() + "\n");
 
     switch (effect) {
     case CommunityChestEffect::BIRTHDAY_COLLECT_100:
         // Collect 100 from every other active player
         ctx.collectFromAll(player, 100);
-        cout << player.getUsername() << " menerima M100 dari setiap pemain." << endl;
+        ctx.printMessage(player.getUsername() + " menerima M100 dari setiap pemain.\n");
         break;
 
     case CommunityChestEffect::DOCTOR_FEE_700:
         // Pay 700 to the bank; chargeToBank triggers bankruptcy if insufficient
         ctx.chargeToBank(player, 700);
-        cout << player.getUsername() << " membayar M700 biaya dokter ke Bank." << endl;
+        ctx.printMessage(player.getUsername() + " membayar M700 biaya dokter ke Bank.\n");
         break;
 
     case CommunityChestEffect::CAMPAIGN_PAY_200:
         // Pay 200 to every other active player
         ctx.payToAll(player, 200);
-        cout << player.getUsername() << " membayar M200 ke setiap pemain." << endl;
+        ctx.printMessage(player.getUsername() + " membayar M200 ke setiap pemain.\n");
         break;
     }
 }

@@ -1,7 +1,7 @@
 #include "MoveCard.hpp"
 #include "IGameContext.hpp"
 #include "Player.hpp"
-#include <iostream>
+#include <string>
 
 using namespace std;
 
@@ -16,6 +16,6 @@ int MoveCard::getSteps() const {
 
 void MoveCard::executeAction(IGameContext& ctx) {
     Player& player = ctx.getActivePlayer();
-    cout << "MoveCard: maju " << steps << " petak." << endl;
+    ctx.printMessage("MoveCard: maju " + to_string(steps) + " petak.\n");
     ctx.movePlayerBy(player, steps);
 }

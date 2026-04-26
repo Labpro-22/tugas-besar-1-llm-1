@@ -480,6 +480,11 @@ int Game::getLastDiceTotal() const {
     return lastDiceTotal;
 }
 
+void Game::printMessage(const string& message) {
+    if (ui)
+        ui->printMessage(message);
+}
+
 // ── Public accessors ──────────────────────────────────────────────────────────
 
 const vector<unique_ptr<Player>>& Game::getPlayers() const {

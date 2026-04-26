@@ -9,7 +9,6 @@
 #include "StreetTile.hpp"
 
 #include <algorithm>
-#include <iostream>
 #include <string>
 #include <vector>
 

@@ -2,7 +2,6 @@
 #include "Board.hpp"
 #include "IGameContext.hpp"
 #include "Player.hpp"
-#include <iostream>
 
 using namespace std;
 
@@ -17,7 +16,7 @@ void LassoCard::executeAction(IGameContext& ctx) {
     Player* target = ctx.promptSelectTarget(player);
     if (target) {
         ctx.repositionPlayer(*target, player.getPosition());
-        cout << "LassoCard: " << target->getUsername() << " ditarik ke petak "
-             << ctx.getBoard().getTileAt(player.getPosition())->getName() << "!" << endl;
+        ctx.printMessage("LassoCard: " + target->getUsername() + " ditarik ke petak " +
+                         ctx.getBoard().getTileAt(player.getPosition())->getName() + "!\n");
     }
 }
